@@ -1,14 +1,96 @@
 generator client {
-  provider = "prisma-client"
+  provider     = "prisma-client-js"
   output       = "../src/generated/prisma"
   moduleFormat = "cjs"
 }
 
 datasource db {
   provider = "postgresql"
-  url       = env("DATABASE_URL")
+  url      = env("DATABASE_URL")
 }
 
+enum StatusType {
+  SUCCESS
+  FAILED
+  PENDING
+}
+
+enum ResourceType {
+  DOCUMENT
+  VIDEO
+  AUDIO
+}
+
+enum GenderType {
+  MALE
+  FEMALE
+  UNKNOWN
+}
+
+enum AccountStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum SupportRequestStatus {
+  PROCESSED
+  PENDING
+}
+
+enum EnrollmentStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  DROPPED
+  DEFERRED
+}
+
+enum ClassSessionStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  ENDED
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+}
+
+enum InvoiceStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
+
+enum RequestType {
+  SCHEDULE_CHANGE  @map("SCHEDULE_CHANGE")
+  SALARY_COMPLAINT @map("SALARY_COMPLAINT")
+  LEAVE_REQUEST    @map("LEAVE_REQUEST")
+  TRANSFER_REQUEST @map("TRANSFER_REQUEST")
+}
+
+enum RequestStatus {
+  PENDING   @map("PENDING")
+  APPROVED  @map("APPROVED")
+  REJECTED  @map("REJECTED")
+  CANCELLED @map("CANCELLED")
+  RESOLVED  @map("RESOLVED")
+}
+
+// Chỉ dùng cho LEAVE_REQUEST sau khi APPROVED
+enum LeaveStatus {
+  ACTIVE  @map("ACTIVE")
+  ON_HOLD @map("ON_HOLD")
+  EXPIRED @map("EXPIRED")
+  RESUMED @map("RESUMED")
+}
+
+enum GradeStatus {
+  GRADED  @map("GRADED") // Đã chấm
+  MISSING @map("MISSING") // Không nộp
+  EXCUSED @map("EXCUSED") // Có lý do
+}
 
 model AuditLog {
   logId         String      @id @default(uuid()) @map("log_id")
@@ -35,8 +117,372 @@ model AuditLog {
   @@map("audit_logs")
 }
 
-enum StatusType {
-  SUCCESS
-  FAILED
-  PENDING
+model Setting {
+  settingId String   @id @default(uuid()) @map("setting_id")
+  siteName  String   @map("site_name") @db.VarChar(255)
+  logoUrl   String?  @map("logo_url") @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("settings")
+}
+
+model Room {
+  roomId   String @id @default(uuid()) @map("room_id")
+  roomCode String @unique @map("room_code") @db.VarChar(50)
+  capacity Int    @map("capacity")
+
+  @@map("rooms")
+}
+
+model CourseResource {
+  resourceId String       @id @default(uuid()) @map("resource_id")
+  title      String       @map("title") @db.VarChar(255)
+  fileUrl    String       @map("file_url") @db.Text
+  type       ResourceType @map("type")
+
+  @@index([type])
+  @@map("course_resources")
+}
+
+model StudyShift {
+  shiftId   String @id @default(uuid()) @map("shift_id")
+  shiftCode String @unique @map("shift_code") @db.VarChar(50)
+  shiftName String @map("shift_name") @db.VarChar(255)
+  timeRange String @map("time_range") @db.VarChar(50)
+
+  sessions              ScheduleSession[]
+  proposedShiftRequests Request[]         @relation("RequestProposedShift")
+
+  @@map("study_shifts")
+}
+
+model Course {
+  courseId      String  @id @default(uuid()) @map("course_id")
+  courseName    String  @map("course_name") @db.VarChar(255)
+  tuitionFee    Decimal @map("tuition_fee") @db.Decimal(12, 2)
+  level         String? @map("level") @db.VarChar(20)
+  totalSessions Int     @map("total_sessions")
+
+  classes            Class[]
+  teacherSpecialties TeacherSpecialty[]
+
+  @@map("courses")
+}
+
+model Account {
+  accountId       String           @id @default(uuid()) @map("account_id")
+  username        String           @unique @map("username") @db.VarChar(100)
+  password        String           @map("password") @db.Text
+  roleId          String           @map("role_id")
+  status          AccountStatus    @default(ACTIVE) @map("status")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  profile         Profile?
+  supportRequests SupportRequest[]
+
+  sentRequests     Request[] @relation("RequestSentBy")
+  approvedRequests Request[] @relation("RequestApprovedBy")
+
+  role Role @relation(fields: [roleId], references: [roleId], onDelete: Restrict)
+
+  @@index([roleId])
+  @@index([status])
+  @@map("accounts")
+}
+
+model Role {
+  roleId   String @id @default(uuid()) @map("role_id")
+  roleName String @map("role_name") @db.VarChar(100)
+
+  accounts Account[]
+
+  @@map("roles")
+}
+
+model Profile {
+  profileId String     @id @default(uuid()) @map("profile_id")
+  accountId String     @unique @map("account_id")
+  fullName  String?    @map("full_name") @db.VarChar(255)
+  email     String?    @unique @map("email") @db.VarChar(255)
+  phone     String?    @map("phone") @db.VarChar(20)
+  gender    GenderType @default(UNKNOWN) @map("gender")
+  avatarUrl String?    @map("avatar_url") @db.Text
+  dob       DateTime?  @map("dob") @db.Date
+
+  student Student?
+  teacher Teacher?
+
+  account Account @relation(fields: [accountId], references: [accountId], onDelete: Cascade)
+
+  @@map("profiles")
+}
+
+model Student {
+  studentId   String @id @default(uuid()) @map("student_id")
+  profileId   String @unique @map("profile_id")
+  studentCode String @unique @map("student_code") @db.VarChar(50)
+
+  enrollments Enrollment[]
+  feedbacks   Feedback[]
+
+  profile          Profile            @relation(fields: [profileId], references: [profileId], onDelete: Cascade)
+  AssignmentResult AssignmentResult[]
+  Invoice          Invoice[]
+
+  @@map("students")
+}
+
+model Teacher {
+  teacherId    String  @id @default(uuid()) @map("teacher_id")
+  teacherCode  String  @unique @map("teacher_code") @db.VarChar(50)
+  profileId    String  @unique @map("profile_id")
+  salaryRate   Decimal @map("salary_rate") @db.Decimal(12, 2)
+  warningCount Int     @default(0) @map("warning_count")
+
+  classes            Class[]
+  feedbacks          Feedback[]
+  teacherSpecialties TeacherSpecialty[]
+  salaries           Salary[]
+  attendances        Attendance[]
+
+  profile          Profile            @relation(fields: [profileId], references: [profileId], onDelete: Cascade)
+  AssignmentResult AssignmentResult[]
+
+  @@index([warningCount])
+  @@map("teachers")
+}
+
+model TeacherSpecialty {
+  specialtyId String @id @default(uuid()) @map("specialty_id")
+  teacherId   String @map("teacher_id")
+  courseId    String @map("course_id")
+
+  teacher Teacher @relation(fields: [teacherId], references: [teacherId], onDelete: Cascade)
+  course  Course  @relation(fields: [courseId], references: [courseId], onDelete: Cascade)
+
+  @@unique([teacherId, courseId])
+  @@index([courseId])
+  @@map("teacher_specialties")
+}
+
+model Class {
+  classId     String   @id @default(uuid()) @map("class_id")
+  courseId    String   @map("course_id")
+  teacherId   String   @map("teacher_id")
+  startDate   DateTime @map("start_date")
+  maxStudents Int      @map("max_students")
+
+  course      Course            @relation(fields: [courseId], references: [courseId], onDelete: Restrict)
+  teacher     Teacher           @relation(fields: [teacherId], references: [teacherId], onDelete: Restrict)
+  sessions    ScheduleSession[]
+  enrollments Enrollment[]
+  feedbacks   Feedback[]
+
+  transferRequestsFrom Request[] @relation("RequestFromClass")
+  transferRequestsTo   Request[] @relation("RequestToClass")
+  Invoice              Invoice[]
+
+  @@index([courseId])
+  @@index([teacherId])
+  @@index([startDate])
+  @@map("classes")
+}
+
+model ScheduleSession {
+  sessionId String             @id @default(uuid()) @map("session_id")
+  classId   String             @map("class_id")
+  shiftCode String             @map("shift_code") @db.VarChar(50)
+  studyDate DateTime           @map("study_date") @db.Date
+  status    ClassSessionStatus @default(NOT_STARTED) @map("status")
+
+  class            Class              @relation(fields: [classId], references: [classId], onDelete: Cascade)
+  shift            StudyShift         @relation(fields: [shiftCode], references: [shiftCode], onDelete: Restrict)
+  attendances      Attendance[]
+  requests         Request[]
+  AssignmentResult AssignmentResult[]
+
+  @@unique([classId, shiftCode, studyDate])
+  @@index([classId])
+  @@index([shiftCode])
+  @@index([studyDate])
+  @@index([status])
+  @@map("class_sessions")
+}
+
+model Attendance {
+  attendanceId String           @id @default(uuid()) @map("attendance_id")
+  teacherId    String           @map("teacher_id")
+  sessionId    String           @map("session_id")
+  status       AttendanceStatus @map("status")
+  note         String?          @map("note") @db.Text
+
+  teacher Teacher         @relation(fields: [teacherId], references: [teacherId], onDelete: Cascade)
+  session ScheduleSession @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
+
+  @@unique([teacherId, sessionId])
+  @@index([teacherId])
+  @@index([sessionId])
+  @@index([status])
+  @@map("attendances")
+}
+
+model Salary {
+  salaryId      String   @id @default(uuid()) @map("salary_id")
+  teacherId     String   @map("teacher_id")
+  salaryDate    DateTime @map("salary_date") @db.Date
+  totalSessions Int      @map("total_sessions")
+  bonus         Decimal  @default(0) @map("bonus") @db.Decimal(12, 2)
+  deduction     Decimal  @default(0) @map("deduction") @db.Decimal(12, 2)
+  totalAmount   Decimal  @map("total_amount") @db.Decimal(12, 2)
+
+  teacher  Teacher   @relation(fields: [teacherId], references: [teacherId], onDelete: Cascade)
+  requests Request[]
+
+  @@unique([teacherId, salaryDate])
+  @@index([teacherId])
+  @@index([salaryDate])
+  @@map("salaries")
+}
+
+model Enrollment {
+  enrollmentId String           @id @default(uuid()) @map("enrollment_id")
+  studentId    String           @map("student_id")
+  classId      String           @map("class_id")
+  createdAt    DateTime         @default(now()) @map("created_at")
+  status       EnrollmentStatus @default(NOT_STARTED) @map("status")
+
+  student  Student   @relation(fields: [studentId], references: [studentId], onDelete: Cascade)
+  class    Class     @relation(fields: [classId], references: [classId], onDelete: Cascade)
+  requests Request[]
+
+  @@unique([studentId, classId])
+  @@index([studentId])
+  @@index([classId])
+  @@index([status])
+  @@index([createdAt(sort: Desc)])
+  @@map("enrollments")
+}
+
+model Feedback {
+  feedbackId String   @id @default(uuid()) @map("feedback_id")
+  studentId  String   @map("student_id")
+  classId    String   @map("class_id")
+  teacherId  String   @map("teacher_id")
+  content    String   @map("content") @db.Text
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  student Student @relation(fields: [studentId], references: [studentId], onDelete: Cascade)
+  class   Class   @relation(fields: [classId], references: [classId], onDelete: Cascade)
+  teacher Teacher @relation(fields: [teacherId], references: [teacherId], onDelete: Cascade)
+
+  @@index([studentId])
+  @@index([classId])
+  @@index([teacherId])
+  @@index([createdAt(sort: Desc)])
+  @@map("feedbacks")
+}
+
+model SupportRequest {
+  supportRequestId String               @id @default(uuid()) @map("support_request_id")
+  accountId        String               @map("account_id")
+  content          String               @map("content") @db.Text
+  status           SupportRequestStatus @default(PENDING) @map("status")
+
+  account Account @relation(fields: [accountId], references: [accountId], onDelete: Cascade)
+
+  @@index([accountId])
+  @@index([status])
+  @@map("support_requests")
+}
+
+model Request {
+  requestId         String        @id @default(uuid()) @map("request_id")
+  type              RequestType   @map("type")
+  senderAccountId   String        @map("sender_account_id")
+  reason            String        @map("reason") @db.Text
+  status            RequestStatus @default(PENDING) @map("status")
+  approverAccountId String?       @map("approver_account_id")
+  approvalNote      String?       @map("approval_note") @db.Text
+  createdAt         DateTime      @default(now()) @map("created_at")
+  updatedAt         DateTime      @updatedAt @map("updated_at")
+
+  // ── SCHEDULE_CHANGE ───────────────────────────────────────
+  // Giáo viên đề xuất đổi ca/ngày của một buổi học cụ thể
+  sessionId         String?   @map("session_id")
+  proposedShiftCode String?   @map("proposed_shift_code") @db.VarChar(50)
+  proposedStudyDate DateTime? @map("proposed_study_date") @db.Date
+
+  // ── SALARY_COMPLAINT ──────────────────────────────────────
+  // Giáo viên khiếu nại bảng lương, đề xuất số tiền mong muốn
+  salaryId       String?  @map("salary_id")
+  proposedAmount Decimal? @map("proposed_amount") @db.Decimal(12, 2)
+
+  // ── LEAVE_REQUEST ─────────────────────────────────────────
+  // Học viên xin bảo lưu khóa học
+  // Quy tắc hoàn tiền: < 30% hoàn trả | 30–50% tiếp tục | >= 50% tiếp tục
+  enrollmentId      String?      @map("enrollment_id")
+  leaveStartDate    DateTime?    @map("leave_start_date") @db.Date
+  leaveEndDate      DateTime?    @map("leave_end_date") @db.Date
+  progressAtRequest Float?       @map("progress_at_request") // % tiến độ lúc gửi đơn
+  leaveStatus       LeaveStatus? @map("leave_status") // điền sau khi APPROVED
+
+  // ── TRANSFER_REQUEST ──────────────────────────────────────
+  // Học viên xin chuyển sang lớp khác
+  fromClassId String? @map("from_class_id")
+  toClassId   String? @map("to_class_id")
+
+  // ── Relations ─────────────────────────────────────────────
+  senderAccount   Account          @relation("RequestSentBy", fields: [senderAccountId], references: [accountId], onDelete: Cascade)
+  approverAccount Account?         @relation("RequestApprovedBy", fields: [approverAccountId], references: [accountId], onDelete: SetNull)
+  session         ScheduleSession? @relation(fields: [sessionId], references: [sessionId], onDelete: SetNull)
+  proposedShift   StudyShift?      @relation("RequestProposedShift", fields: [proposedShiftCode], references: [shiftCode], onDelete: SetNull)
+  salary          Salary?          @relation(fields: [salaryId], references: [salaryId], onDelete: SetNull)
+  enrollment      Enrollment?      @relation(fields: [enrollmentId], references: [enrollmentId], onDelete: SetNull)
+  fromClass       Class?           @relation("RequestFromClass", fields: [fromClassId], references: [classId], onDelete: SetNull)
+  toClass         Class?           @relation("RequestToClass", fields: [toClassId], references: [classId], onDelete: SetNull)
+
+  // ── Indexes ───────────────────────────────────────────────
+  @@index([senderAccountId])
+  @@index([approverAccountId])
+  @@index([type, status])
+  @@index([createdAt])
+  @@map("requests")
+}
+
+model AssignmentResult {
+  resultId   String      @id @default(uuid()) @map("result_id")
+  sessionId  String      @map("session_id") // Buổi học giao bài
+  studentId  String      @map("student_id")
+  score      Decimal?    @map("score") @db.Decimal(5, 2)
+  status     GradeStatus @default(GRADED) @map("status")
+  feedback   String?     @map("feedback") @db.Text
+  gradedById String?     @map("graded_by_id")
+  gradedAt   DateTime?   @map("graded_at")
+  createdAt  DateTime    @default(now()) @map("created_at")
+  updatedAt  DateTime    @updatedAt @map("updated_at")
+
+  session  ScheduleSession @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
+  student  Student         @relation(fields: [studentId], references: [studentId], onDelete: Cascade)
+  gradedBy Teacher?        @relation(fields: [gradedById], references: [teacherId], onDelete: SetNull)
+
+  @@unique([sessionId, studentId]) // Mỗi học sinh 1 kết quả / buổi
+  @@index([studentId])
+  @@index([sessionId])
+  @@map("assignment_results")
+}
+
+model Invoice {
+  invoiceId String        @id @default(uuid()) @map("invoice_id")
+  studentId String        @map("student_id")
+  classId   String        @map("class_id")
+  amount    Decimal       @map("amount") @db.Decimal(12, 2)
+  status    InvoiceStatus @default(PENDING) @map("status")
+
+  student Student @relation(fields: [studentId], references: [studentId], onDelete: Cascade)
+  class   Class   @relation(fields: [classId], references: [classId], onDelete: Cascade)
+
+  @@index([studentId])
+  @@index([classId])
+  @@index([status])
+  @@map("invoices")
 }
