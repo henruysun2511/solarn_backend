@@ -1,0 +1,42 @@
+generator client {
+  provider = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+  url       = env("DATABASE_URL")
+}
+
+
+model AuditLog {
+  logId         String      @id @default(uuid()) @map("log_id")
+  ipAddress     String?     @map("ip_address")
+  userAgent     String?     @map("user_agent")
+  accountId     String?     @map("account_id")
+  action        String
+  entityName    String      @map("entity_name")
+  entityId      String?     @map("entity_id")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  endpoint      String?     @map("endpoint")
+  serviceName   String?     @map("service_name")
+  before        Json?
+  after         Json?
+  diff          Json?
+  status        StatusType?
+  metadata      Json?
+  retentionDate DateTime    @map("retention_date")
+
+  @@index([accountId])
+  @@index([createdAt(sort: Desc)])
+  @@index([action])
+  @@index([entityName, entityId])
+  @@map("audit_logs")
+}
+
+enum StatusType {
+  SUCCESS
+  FAILED
+  PENDING
+}
