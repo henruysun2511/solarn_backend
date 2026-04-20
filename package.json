@@ -17,7 +17,7 @@
     "test": "jest",
     "migrate:dev": "prisma migrate dev ",
     "migrate:dev:create": "prisma migrate dev --create-only ",
-    "migrate:reset": "prisma migrate reset e",
+    "migrate:reset": "prisma migrate reset",
     "migrate:deploy": "npx prisma migrate deploy ",
     "migrate:status": "npx prisma migrate status ",
     "migrate:resolve": "npx prisma migrate resolve ",
@@ -28,11 +28,11 @@
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [
-      "eslint",
-      "prettier --check"
+      "eslint --fix",
+      "prettier --write"
     ],
     "*.{json,md,yml,yaml}": [
-      "prettier --check"
+      "prettier --write"
     ]
   },
   "dependencies": {
