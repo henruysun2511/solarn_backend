@@ -1,12 +1,10 @@
 generator client {
   provider     = "prisma-client-js"
-  output       = "../src/generated/prisma"
   moduleFormat = "cjs"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 enum StatusType {
@@ -192,7 +190,7 @@ model Account {
 
 model Role {
   roleId   String @id @default(uuid()) @map("role_id")
-  roleName String @map("role_name") @db.VarChar(100)
+  roleName String @unique @map("role_name") @db.VarChar(100)
 
   accounts Account[]
 
