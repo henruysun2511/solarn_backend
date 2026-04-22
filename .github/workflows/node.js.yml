@@ -18,6 +18,17 @@ jobs:
         node-version: [18.x, 20.x, 22.x]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
+    env:
+      PORT: '3000'
+      APP_NAME: 'SOLARN'
+      PROJECT_STAGE: ${{ secrets.PROJECT_STAGE }}
+      DIRECT_URL: ${{ secrets.DIRECT_URL }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      LOGTAIL_TOKEN: ${{ secrets.LOGTAIL_TOKEN }}
+      LOGTAIL_ENDPOINT: ${{ secrets.LOGTAIL_ENDPOINT }}
+      LOGTAIL_LEVEL: 'warn'
+      LOG_FILE_PATH: 'logs/app.log'
+
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node-version }}
