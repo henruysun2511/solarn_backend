@@ -10,4 +10,8 @@ export class RoleService {
   async create(roleDto: CreateRoleDto) {
     return this.roleRepo.create(roleDto);
   }
+
+  async getByName(roleName: string) {
+    return this.roleRepo.findByName(roleName);
+  }
 }

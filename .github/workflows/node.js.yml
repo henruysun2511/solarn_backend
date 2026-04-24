@@ -26,6 +26,7 @@ jobs:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       LOGTAIL_TOKEN: ${{ secrets.LOGTAIL_TOKEN }}
       LOGTAIL_ENDPOINT: ${{ secrets.LOGTAIL_ENDPOINT }}
+      OTP_EXPIRE_MINUTES: d'3'
       LOGTAIL_LEVEL: 'warn'
       LOG_FILE_PATH: 'logs/app.log'
 

@@ -61,6 +61,10 @@ enum InvoiceStatus {
   CANCELLED
 }
 
+enum OtpPurpose {
+  REGISTER
+}
+
 enum RequestType {
   SCHEDULE_CHANGE  @map("SCHEDULE_CHANGE")
   SALARY_COMPLAINT @map("SALARY_COMPLAINT")
@@ -157,7 +161,7 @@ model StudyShift {
 
 model Course {
   courseId      String  @id @default(uuid()) @map("course_id")
-  courseName    String  @map("course_name") @db.VarChar(255)
+  courseName    String  @unique @map("course_name") @db.VarChar(255)
   tuitionFee    Decimal @map("tuition_fee") @db.Decimal(12, 2)
   level         String? @map("level") @db.VarChar(20)
   totalSessions Int     @map("total_sessions")
@@ -198,21 +202,41 @@ model Role {
 }
 
 model Profile {
-  profileId String     @id @default(uuid()) @map("profile_id")
-  accountId String     @unique @map("account_id")
-  fullName  String?    @map("full_name") @db.VarChar(255)
-  email     String?    @unique @map("email") @db.VarChar(255)
-  phone     String?    @map("phone") @db.VarChar(20)
-  gender    GenderType @default(UNKNOWN) @map("gender")
-  avatarUrl String?    @map("avatar_url") @db.Text
-  dob       DateTime?  @map("dob") @db.Date
+  profileId       String     @id @default(uuid()) @map("profile_id")
+  accountId       String     @unique @map("account_id")
+  fullName        String?    @map("full_name") @db.VarChar(255)
+  email           String?    @unique @map("email") @db.VarChar(255)
+  emailVerifiedAt DateTime?  @map("email_verified_at")
+  phone           String?    @map("phone") @db.VarChar(20)
+  gender          GenderType @default(UNKNOWN) @map("gender")
+  avatarUrl       String?    @map("avatar_url") @db.Text
+  dob             DateTime?  @map("dob") @db.Date
 
   student Student?
   teacher Teacher?
 
-  account Account @relation(fields: [accountId], references: [accountId], onDelete: Cascade)
+  account  Account    @relation(fields: [accountId], references: [accountId], onDelete: Cascade)
+  EmailOtp EmailOtp[]
 
   @@map("profiles")
+}
+
+model EmailOtp {
+  otpId     String     @id @default(uuid()) @map("otp_id")
+  profileId String     @map("profile_id")
+  email     String     @map("email") @db.VarChar(255)
+  purpose   OtpPurpose @default(REGISTER) @map("purpose")
+  codeHash  String     @map("code_hash") @db.Text
+  expiresAt DateTime   @map("expires_at")
+  usedAt    DateTime?  @map("used_at")
+  createdAt DateTime   @default(now()) @map("created_at")
+
+  profile Profile @relation(fields: [profileId], references: [profileId], onDelete: Cascade)
+
+  @@index([profileId])
+  @@index([email])
+  @@index([expiresAt])
+  @@map("email_otps")
 }
 
 model Student {

@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import type { Account, Prisma } from '@prisma/client';
+import { AccountStatus, type Account, type GenderType, type Prisma } from '@prisma/client';
 import { PrismaService } from 'prisma/prisma.service';
 import { AppConfig } from 'common/constants';
 import { generateCode } from 'common/utils';
@@ -7,6 +7,10 @@ import { generateCode } from 'common/utils';
 @Injectable()
 export class AccountRepository {
   constructor(private readonly prisma: PrismaService) {}
+
+  async findByUsername(username: string): Promise<Account | null> {
+    return this.prisma.account.findUnique({ where: { username } });
+  }
 
   async create(data: Prisma.AccountCreateInput): Promise<Account> {
     return this.prisma.account.create({ data });
@@ -68,6 +72,45 @@ export class AccountRepository {
           }
         });
       }
+
+      return account;
+    });
+  }
+
+  async registerStudentWithProfile(input: {
+    username: string;
+    passwordHash: string;
+    studentRoleId: string;
+    profile: {
+      fullName: string;
+      email: string;
+      phone: string;
+      gender: GenderType;
+    };
+  }) {
+    return this.prisma.$transaction(async (tx) => {
+      const account = await tx.account.create({
+        data: {
+          username: input.username,
+          password: input.passwordHash,
+          status: AccountStatus.INACTIVE,
+          role: { connect: { roleId: input.studentRoleId } },
+          profile: {
+            create: {
+              fullName: input.profile.fullName,
+              email: input.profile.email,
+              phone: input.profile.phone,
+              gender: input.profile.gender,
+              student: {
+                create: {
+                  studentCode: generateCode('STU')
+                }
+              }
+            }
+          }
+        },
+        include: { profile: { include: { student: true } } }
+      });
 
       return account;
     });

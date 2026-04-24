@@ -5,11 +5,13 @@ import { GlobalExceptionFilter } from 'common/exceptions';
 import { PrismaModule } from 'prisma/prisma.module';
 
 import { LoggerModule } from './logger/logger.module';
+import { MailerModule } from './mailer/mailer.module';
 
 @Global()
 @Module({
   imports: [
     LoggerModule,
+    MailerModule,
     PrismaModule
     // JwtModule.registerAsync({
     //   imports: [ConfigModule],
@@ -28,6 +30,6 @@ import { LoggerModule } from './logger/logger.module';
       useClass: GlobalExceptionFilter
     }
   ],
-  exports: [LoggerModule, PrismaModule]
+  exports: [LoggerModule, MailerModule, PrismaModule]
 })
 export class SharedModule {}
