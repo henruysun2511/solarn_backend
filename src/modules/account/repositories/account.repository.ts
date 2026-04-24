@@ -77,6 +77,13 @@ export class AccountRepository {
     });
   }
 
+  updateStatus(accountId: string, status: AccountStatus) {
+    return this.prisma.account.update({
+      where: { accountId },
+      data: { status }
+    });
+  }
+
   async registerStudentWithProfile(input: {
     username: string;
     passwordHash: string;

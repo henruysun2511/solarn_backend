@@ -2,6 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { AppConfig } from 'common/constants';
 import { hashPassword } from 'common/utils';
 import { RoleService } from 'modules/role/services/role.service';
+import { AccountStatus } from '@prisma/client';
 
 import { AccountRepository } from '../repositories/account.repository';
 import { CreateAccountDto, RegisterStudentDto } from '../dtos';
@@ -61,5 +62,25 @@ export class AccountService {
       studentCode: account.profile?.student?.studentCode ?? null,
       createdAt: account.createdAt
     };
+  }
+
+  async changeStatus(accountId: string, status: AccountStatus) {
+    if (status === AccountStatus.ACTIVE) {
+      return this.activate(accountId);
+    }
+
+    if (status === AccountStatus.INACTIVE) {
+      return this.deactivate(accountId);
+    }
+
+    throw new BadRequestException('Trạng thái không hợp lệ');
+  }
+
+  private async activate(accountId: string) {
+    return this.accountRepo.updateStatus(accountId, AccountStatus.ACTIVE);
+  }
+
+  private async deactivate(accountId: string) {
+    return this.accountRepo.updateStatus(accountId, AccountStatus.INACTIVE);
   }
 }
