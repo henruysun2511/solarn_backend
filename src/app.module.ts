@@ -4,6 +4,8 @@ import { RoleModule } from 'modules/role/role.module';
 import { SharedModule } from 'shared/shared.module';
 import { CourseModule } from 'modules/course/course.module';
 import { ClassModule } from 'modules/class/class.module';
+import { RoomModule } from 'modules/room/room.module';
+import { BranchModule } from 'modules/branch/branch.module';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -13,6 +15,7 @@ import { AuthModule } from './modules/auth/auth.module';
 
 @Module({
   imports: [
+    BranchModule,
     ConfigModule.forRoot({
       isGlobal: true
     }),
@@ -22,6 +25,7 @@ import { AuthModule } from './modules/auth/auth.module';
     AccountModule,
     AuthModule,
     RoleModule,
+    RoomModule,
     SharedModule
   ],
   controllers: [AppController],
