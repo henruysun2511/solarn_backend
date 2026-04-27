@@ -7,6 +7,7 @@ import { ClassModule } from 'modules/class/class.module';
 import { RoomModule } from 'modules/room/room.module';
 import { BranchModule } from 'modules/branch/branch.module';
 import { StudyShiftModule } from 'modules/study-shift/study-shift.module';
+import { ScheduleTemplateModule } from 'modules/schedule-template/schedule-template.module';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -28,6 +29,7 @@ import { AuthModule } from './modules/auth/auth.module';
     RoleModule,
     RoomModule,
     StudyShiftModule,
+    ScheduleTemplateModule,
     SharedModule
   ],
   controllers: [AppController],

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 
 import { CourseRepository } from '../repositories/course.repository';
 import { CreateCourseDto } from '../dtos';
@@ -9,5 +9,15 @@ export class CourseService {
 
   async create(courseDto: CreateCourseDto) {
     return this.courseRepo.create(courseDto);
+  }
+
+  async getTotalSessions(courseId: string) {
+    const course = await this.courseRepo.findById(courseId);
+
+    if (!course) {
+      throw new BadRequestException('Khóa học không tồn tại');
+    }
+
+    return course.totalSessions;
   }
 }

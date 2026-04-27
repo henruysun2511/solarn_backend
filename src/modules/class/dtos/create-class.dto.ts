@@ -26,4 +26,13 @@ export class CreateClassDto {
   @IsInt()
   @Min(1)
   maxStudents: number;
+
+  @ApiProperty({
+    format: 'uuid',
+    example: '550e8400-e29b-41d4-a716-446655440010',
+    description: 'Bản ghi lịch mẫu gồm các ngày học trong tuần và mã ca'
+  })
+  @IsUUID()
+  @IsNotEmpty()
+  scheduleTemplateId: string;
 }

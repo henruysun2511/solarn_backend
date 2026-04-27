@@ -174,7 +174,8 @@ model StudyShift {
   timeRange String @map("time_range") @db.VarChar(50)
 
   sessions              ScheduleSession[]
-  proposedShiftRequests Request[]         @relation("RequestProposedShift")
+  scheduleTemplates     ClassScheduleTemplate[]
+  proposedShiftRequests Request[]               @relation("RequestProposedShift")
 
   @@map("study_shifts")
 }
@@ -308,17 +309,19 @@ model TeacherSpecialty {
 }
 
 model Class {
-  classId     String   @id @default(uuid()) @map("class_id")
-  courseId    String   @map("course_id")
-  teacherId   String   @map("teacher_id")
-  startDate   DateTime @map("start_date")
-  maxStudents Int      @map("max_students")
+  classId            String   @id @default(uuid()) @map("class_id")
+  courseId           String   @map("course_id")
+  teacherId          String   @map("teacher_id")
+  startDate          DateTime @map("start_date")
+  maxStudents        Int      @map("max_students")
+  scheduleTemplateId String?  @map("schedule_template_id")
 
-  course      Course            @relation(fields: [courseId], references: [courseId], onDelete: Restrict)
-  teacher     Teacher           @relation(fields: [teacherId], references: [teacherId], onDelete: Restrict)
-  sessions    ScheduleSession[]
-  enrollments Enrollment[]
-  feedbacks   Feedback[]
+  course           Course                 @relation(fields: [courseId], references: [courseId], onDelete: Restrict)
+  teacher          Teacher                @relation(fields: [teacherId], references: [teacherId], onDelete: Restrict)
+  scheduleTemplate ClassScheduleTemplate? @relation(fields: [scheduleTemplateId], references: [templateId], onDelete: SetNull)
+  sessions         ScheduleSession[]
+  enrollments      Enrollment[]
+  feedbacks        Feedback[]
 
   transferRequestsFrom Request[] @relation("RequestFromClass")
   transferRequestsTo   Request[] @relation("RequestToClass")
@@ -326,8 +329,22 @@ model Class {
 
   @@index([courseId])
   @@index([teacherId])
+  @@index([scheduleTemplateId])
   @@index([startDate])
   @@map("classes")
+}
+
+model ClassScheduleTemplate {
+  templateId   String @id @default(uuid()) @map("template_id")
+  templateName String @map("template_name") @db.VarChar(255)
+  weekdays     String @map("weekdays") @db.VarChar(20)
+  shiftCode    String @map("shift_code") @db.VarChar(50)
+
+  shift   StudyShift @relation(fields: [shiftCode], references: [shiftCode], onDelete: Restrict)
+  classes Class[]
+
+  @@index([shiftCode])
+  @@map("class_schedule_templates")
 }
 
 model ScheduleSession {

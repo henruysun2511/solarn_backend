@@ -9,4 +9,14 @@ export class CourseRepository {
   async create(data: Prisma.CourseCreateInput) {
     return this.prisma.course.create({ data });
   }
+
+  async findById(courseId: string) {
+    return this.prisma.course.findUnique({
+      where: { courseId },
+      select: {
+        courseId: true,
+        totalSessions: true
+      }
+    });
+  }
 }
