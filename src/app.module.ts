@@ -6,6 +6,7 @@ import { CourseModule } from 'modules/course/course.module';
 import { ClassModule } from 'modules/class/class.module';
 import { RoomModule } from 'modules/room/room.module';
 import { BranchModule } from 'modules/branch/branch.module';
+import { StudyShiftModule } from 'modules/study-shift/study-shift.module';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -26,6 +27,7 @@ import { AuthModule } from './modules/auth/auth.module';
     AuthModule,
     RoleModule,
     RoomModule,
+    StudyShiftModule,
     SharedModule
   ],
   controllers: [AppController],
