@@ -19,6 +19,13 @@ interface CreateClassData {
 export class ClassRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  findById(classId: string) {
+    return this.prisma.class.findUnique({
+      where: { classId },
+      select: { classId: true, startDate: true, maxStudents: true }
+    });
+  }
+
   async create(data: CreateClassData) {
     return this.prisma.$transaction(async (tx) => {
       const createdClass = await tx.class.create({
