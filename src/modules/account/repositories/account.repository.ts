@@ -12,6 +12,21 @@ export class AccountRepository {
     return this.prisma.account.findUnique({ where: { username } });
   }
 
+  findAccountForAuthByUsername(username: string) {
+    return this.prisma.account.findUnique({
+      where: { username },
+      select: {
+        accountId: true,
+        username: true,
+        password: true,
+        status: true,
+        roleId: true,
+        role: { select: { roleName: true } },
+        profile: { select: { fullName: true, email: true } }
+      }
+    });
+  }
+
   async create(data: Prisma.AccountCreateInput): Promise<Account> {
     return this.prisma.account.create({ data });
   }

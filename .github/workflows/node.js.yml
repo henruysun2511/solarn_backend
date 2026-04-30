@@ -26,6 +26,10 @@ jobs:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       LOGTAIL_TOKEN: ${{ secrets.LOGTAIL_TOKEN }}
       LOGTAIL_ENDPOINT: ${{ secrets.LOGTAIL_ENDPOINT }}
+      JWT_ACCESS_TOKEN_SECRET: ${{ secrets.JWT_ACCESS_TOKEN_SECRET }}
+      JWT_ACCESS_TOKEN_EXPIRE: '100m'
+      JWT_REFRESH_TOKEN_EXPIRE: '6d'
+      JWT_REFRESH_TOKEN_SECRET: ${{ secrets.JWT_REFRESH_TOKEN_SECRET }}
       OTP_EXPIRE_MINUTES: d'3'
       LOGTAIL_LEVEL: 'warn'
       LOG_FILE_PATH: 'logs/app.log'

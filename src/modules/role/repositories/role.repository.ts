@@ -15,4 +15,13 @@ export class RoleRepository {
       where: { roleName }
     });
   }
+
+  async getNameByRoleId(roleId: string) {
+    const role = await this.prisma.role.findUnique({
+      where: { roleId },
+      select: { roleName: true }
+    });
+
+    return role?.roleName ?? null;
+  }
 }

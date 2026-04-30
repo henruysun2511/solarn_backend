@@ -3,6 +3,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
 import { ResponseInterceptor } from 'common/interceptors';
+import { JwtAuthGuard } from 'modules/auth/guards';
 
 import { AppModule } from './app.module';
 
@@ -11,6 +12,8 @@ async function bootstrap() {
 
   const reflector = app.get(Reflector);
   app.useGlobalInterceptors(new ResponseInterceptor(reflector));
+
+  app.useGlobalGuards(new JwtAuthGuard(reflector));
 
   app.useGlobalPipes(
     new ValidationPipe({

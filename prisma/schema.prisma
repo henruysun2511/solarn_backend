@@ -206,11 +206,27 @@ model Account {
   sentRequests     Request[] @relation("RequestSentBy")
   approvedRequests Request[] @relation("RequestApprovedBy")
 
-  role Role @relation(fields: [roleId], references: [roleId], onDelete: Restrict)
+  role  Role    @relation(fields: [roleId], references: [roleId], onDelete: Restrict)
+  Token Token[]
 
   @@index([roleId])
   @@index([status])
   @@map("accounts")
+}
+
+model Token {
+  tokenId   String   @id @default(uuid()) @map("token_id")
+  accountId String   @map("account_id")
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  account   Account  @relation(fields: [accountId], references: [accountId], onDelete: Cascade)
+
+  @@index([accountId])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("tokens")
 }
 
 model Role {

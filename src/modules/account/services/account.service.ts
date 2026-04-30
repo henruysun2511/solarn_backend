@@ -64,6 +64,10 @@ export class AccountService {
     };
   }
 
+  async findAccountForAuthByUsername(username: string) {
+    return this.accountRepo.findAccountForAuthByUsername(username);
+  }
+
   async changeStatus(accountId: string, status: AccountStatus) {
     if (status === AccountStatus.ACTIVE) {
       return this.activate(accountId);
