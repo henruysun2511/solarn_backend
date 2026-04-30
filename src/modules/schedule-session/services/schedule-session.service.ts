@@ -95,4 +95,8 @@ export class ScheduleSessionService {
   getSessionToClassIdMap(sessionIds: string[]) {
     return this.scheduleSessionRepo.getSessionToClassIdMap(sessionIds);
   }
+
+  findEndedSessionsWithinRange(salaryDate: Date, nextMonthDate: Date) {
+    return this.scheduleSessionRepo.findEndedSessionsWithinRange(salaryDate, nextMonthDate);
+  }
 }

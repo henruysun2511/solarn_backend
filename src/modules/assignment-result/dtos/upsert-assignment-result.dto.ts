@@ -1,7 +1,6 @@
 import { Type } from 'class-transformer';
 import { ApiPropertyOptional, ApiProperty } from '@nestjs/swagger';
-import { GradeStatus } from '@prisma/client';
-import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Min } from 'class-validator';
 
 export class UpsertAssignmentResultDto {
   @ApiProperty({ format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440100' })
@@ -14,16 +13,11 @@ export class UpsertAssignmentResultDto {
   @IsNotEmpty()
   studentId: string;
 
-  @ApiPropertyOptional({ example: 9.5, description: 'Điểm số (Decimal 5,2)' })
+  @ApiProperty({ example: 9.5, description: 'Điểm số (Decimal 5,2) - bắt buộc, cho phép 0' })
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 2 })
-  @IsOptional()
-  score?: number;
-
-  @ApiPropertyOptional({ enum: GradeStatus, example: GradeStatus.GRADED })
-  @IsEnum(GradeStatus)
-  @IsOptional()
-  status?: GradeStatus;
+  @Min(0)
+  score: number;
 
   @ApiPropertyOptional({ example: 'Làm bài tốt, cần cải thiện phần...' })
   @IsString()

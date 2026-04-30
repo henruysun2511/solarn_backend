@@ -10,6 +10,7 @@ import { StudyShiftModule } from 'modules/study-shift/study-shift.module';
 import { ScheduleTemplateModule } from 'modules/schedule-template/schedule-template.module';
 import { AttendanceModule } from 'modules/attendance/attendance.module';
 import { AssignmentResultModule } from 'modules/assignment-result/assignment-result.module';
+import { SalaryModule } from 'modules/salary/salary.module';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -27,12 +28,14 @@ import { AuthModule } from './modules/auth/auth.module';
     ClassModule,
     PrismaModule,
     AccountModule,
+    AssignmentResultModule,
     AuthModule,
     RoleModule,
     RoomModule,
     StudyShiftModule,
     AttendanceModule,
     AssignmentResultModule,
+    SalaryModule,
     ScheduleTemplateModule,
     SharedModule
   ],
