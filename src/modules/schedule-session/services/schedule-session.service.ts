@@ -84,6 +84,10 @@ export class ScheduleSessionService {
     return this.scheduleSessionRepo.updateStatus(sessionId, status);
   }
 
+  findTeacherSessionConflicts(teacherId: string, sessions: Array<{ shiftCode: string; studyDate: Date }>) {
+    return this.scheduleSessionRepo.findTeacherSessionConflicts(teacherId, sessions);
+  }
+
   getSessionMetaMap(sessionIds: string[]) {
     return this.scheduleSessionRepo.getSessionMetaMap(sessionIds);
   }
