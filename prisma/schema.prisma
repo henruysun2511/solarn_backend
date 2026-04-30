@@ -88,12 +88,6 @@ enum LeaveStatus {
   RESUMED @map("RESUMED")
 }
 
-enum GradeStatus {
-  GRADED  @map("GRADED") // Đã chấm
-  MISSING @map("MISSING") // Không nộp
-  EXCUSED @map("EXCUSED") // Có lý do
-}
-
 model AuditLog {
   logId         String      @id @default(uuid()) @map("log_id")
   ipAddress     String?     @map("ip_address")
@@ -525,16 +519,15 @@ model Request {
 }
 
 model AssignmentResult {
-  resultId   String      @id @default(uuid()) @map("result_id")
-  sessionId  String      @map("session_id") // Buổi học giao bài
-  studentId  String      @map("student_id")
-  score      Decimal?    @map("score") @db.Decimal(5, 2)
-  status     GradeStatus @default(GRADED) @map("status")
-  feedback   String?     @map("feedback") @db.Text
-  gradedById String?     @map("graded_by_id")
-  gradedAt   DateTime?   @map("graded_at")
-  createdAt  DateTime    @default(now()) @map("created_at")
-  updatedAt  DateTime    @updatedAt @map("updated_at")
+  resultId   String    @id @default(uuid()) @map("result_id")
+  sessionId  String    @map("session_id") // Buổi học giao bài
+  studentId  String    @map("student_id")
+  score      Decimal   @default(0) @map("score") @db.Decimal(5, 2)
+  feedback   String?   @map("feedback") @db.Text
+  gradedById String?   @map("graded_by_id")
+  gradedAt   DateTime? @map("graded_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
 
   session  ScheduleSession @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
   student  Student         @relation(fields: [studentId], references: [studentId], onDelete: Cascade)

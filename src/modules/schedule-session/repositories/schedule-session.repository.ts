@@ -78,4 +78,29 @@ export class ScheduleSessionRepository {
 
     return new Map(sessions.map((s) => [s.sessionId, s.classId] as const));
   }
+
+  findEndedSessionsWithinRange(salaryDate: Date, nextMonthDate: Date) {
+    return this.prisma.scheduleSession.findMany({
+      where: {
+        status: ClassSessionStatus.ENDED,
+        studyDate: {
+          gte: salaryDate,
+          lt: nextMonthDate
+        }
+      },
+      select: {
+        class: {
+          select: {
+            teacherId: true,
+            course: {
+              select: {
+                tuitionFee: true,
+                totalSessions: true
+              }
+            }
+          }
+        }
+      }
+    });
+  }
 }

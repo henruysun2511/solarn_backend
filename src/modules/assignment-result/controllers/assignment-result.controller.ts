@@ -1,11 +1,14 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { ResponseMessage, User } from 'common/decorators';
 import { SwaggerDoc } from 'common/swagger';
+import { IAccountRequest } from 'common/interfaces';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 import { AssignmentResultService } from '../services/assignment-result.service';
 import { UpsertAssignmentResultDto } from '../dtos';
 
-@Controller('assignment-result')
+@ApiBearerAuth()
+@Controller('assignment-results')
 export class AssignmentResultController {
   constructor(private readonly assignmentResultService: AssignmentResultService) {}
 
@@ -17,7 +20,7 @@ export class AssignmentResultController {
   })
   @Post('bulk')
   @ResponseMessage('Nhập điểm thành công')
-  async upsertMany(@Body() items: UpsertAssignmentResultDto[], @User() user: any) {
+  async upsertMany(@Body() items: UpsertAssignmentResultDto[], @User() user: IAccountRequest) {
     return this.assignmentResultService.upsertMany(items, user.accountId);
   }
 }
