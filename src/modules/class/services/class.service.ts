@@ -2,6 +2,7 @@ import { BadRequestException, ConflictException, Injectable } from '@nestjs/comm
 import { EnrollmentStatus } from '@prisma/client';
 import { CourseService } from 'modules/course/services/course.service';
 import { EnrollmentService } from 'modules/enrollment/services/enrollment.service';
+import { ScheduleSessionService } from 'modules/schedule-session/services/schedule-session.service';
 import { ScheduleTemplateService } from 'modules/schedule-template/services/schedule-template.service';
 
 import { CreateClassDto } from '../dtos';
@@ -14,6 +15,7 @@ export class ClassService {
     private readonly classRepo: ClassRepository,
     private readonly courseService: CourseService,
     private readonly scheduleTemplateService: ScheduleTemplateService,
+    private readonly scheduleSessionService: ScheduleSessionService,
     private readonly enrollmentService: EnrollmentService
   ) {}
 
@@ -24,6 +26,23 @@ export class ClassService {
     const allowedWeekdays = parseWeekdays(scheduleTemplate.weekdays);
     const startDate = normalizeDate(dto.startDate);
     const sessions = generateScheduleSessions(startDate, allowedWeekdays, scheduleTemplate.shiftCode, totalSessions);
+
+    const conflicts = await this.scheduleSessionService.findTeacherSessionConflicts(
+      dto.teacherId,
+      sessions.map((session) => ({
+        shiftCode: session.shiftCode,
+        studyDate: session.studyDate
+      }))
+    );
+
+    if (conflicts.length > 0) {
+      throw new ConflictException({
+        message: 'Giáo viên bị trùng lịch với lớp khác',
+        reason: 'TEACHER_SCHEDULE_CONFLICT',
+        teacherId: dto.teacherId,
+        conflicts
+      });
+    }
 
     return this.classRepo.create({
       classData: {
