@@ -181,6 +181,8 @@ model Course {
   tuitionFee    Decimal @map("tuition_fee") @db.Decimal(12, 2)
   level         String? @map("level") @db.VarChar(20)
   totalSessions Int     @map("total_sessions")
+  image         String? @db.Text
+  description   String? @db.Text
 
   classes            Class[]
   teacherSpecialties TeacherSpecialty[]

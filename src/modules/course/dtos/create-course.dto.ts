@@ -31,4 +31,16 @@ export class CreateCourseDto {
   @IsInt()
   @Min(1)
   totalSessions: number;
+
+  @ApiPropertyOptional({
+    example: 'https://res.cloudinary.com/dry3sdlc1/image/upload/v1775300814/tuta_uploads/khmnw45idode9mu4qlws.jpg'
+  })
+  @IsString()
+  @IsOptional()
+  image?: string;
+
+  @ApiPropertyOptional({ example: 'Khóa học này ...' })
+  @IsString()
+  @IsOptional()
+  description?: string;
 }

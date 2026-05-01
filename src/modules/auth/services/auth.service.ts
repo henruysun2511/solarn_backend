@@ -44,6 +44,8 @@ export class AuthService {
     });
 
     return {
+      roleName: account.roleName,
+      username: account.username,
       accessToken: this.jwtService.sign(payload),
       refreshToken
     };

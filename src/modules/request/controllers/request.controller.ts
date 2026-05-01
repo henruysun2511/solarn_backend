@@ -1,6 +1,6 @@
-import { Body, Controller, Post, Req } from '@nestjs/common';
+import { Body, Controller, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { IAccountRequest, RequestWithUser } from 'common/interfaces';
+import { IAccountRequest } from 'common/interfaces';
 import { User } from 'common/decorators';
 
 import { CreateSalaryComplaintDto } from '../dtos';
