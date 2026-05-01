@@ -26,4 +26,16 @@ export class SalaryRepository {
   ) {
     return this.prisma.salary.createMany({ data });
   }
+
+  findSalaryById(salaryId: string) {
+    return this.prisma.salary.findUnique({
+      where: { salaryId },
+      select: {
+        salaryId: true,
+        teacherId: true,
+        salaryDate: true,
+        totalAmount: true
+      }
+    });
+  }
 }

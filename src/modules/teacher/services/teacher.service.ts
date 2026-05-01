@@ -13,4 +13,8 @@ export class TeacherService {
   async findTeachersForSalary() {
     return this.teacherRepo.findTeachersForSalary();
   }
+
+  async findTeacherByAccountId(accountId: string) {
+    return this.teacherRepo.findTeacherByAccountId(accountId);
+  }
 }

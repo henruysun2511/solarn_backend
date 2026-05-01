@@ -28,4 +28,19 @@ export class TeacherRepository {
       }
     });
   }
+
+  async findTeacherByAccountId(accountId: string): Promise<{ teacherId: string; teacherCode: string } | null> {
+    const teacher = await this.prisma.teacher.findFirst({
+      where: {
+        profile: {
+          accountId
+        }
+      },
+      select: {
+        teacherId: true,
+        teacherCode: true
+      }
+    });
+    return teacher;
+  }
 }

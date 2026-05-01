@@ -107,4 +107,8 @@ export class SalaryService {
     const nextMonthDate = new Date(Date.UTC(year, month, 1));
     return { salaryDate, nextMonthDate };
   }
+
+  findSalaryById(salaryId: string) {
+    return this.salaryRepo.findSalaryById(salaryId);
+  }
 }
