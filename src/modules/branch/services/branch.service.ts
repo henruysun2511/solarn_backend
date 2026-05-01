@@ -22,7 +22,7 @@ export class BranchService {
     return await this.branchRepo.update(branchId, branchDto);
   }
 
-  async softDelete(branchId: string) {
-    return await this.branchRepo.softDelete(branchId);
+  async delete(branchId: string) {
+    return await this.branchRepo.delete(branchId);
   }
 }

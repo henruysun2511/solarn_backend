@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
+import { paginate } from 'shared/helpers';
 
+import { CreateStudyShiftDto, StudyShiftSearchDto, UpdateStudyShiftDto } from '../dtos';
 import { StudyShiftRepository } from '../repositories/study-shift.repository';
-import { CreateStudyShiftDto } from '../dtos';
 
 @Injectable()
 export class StudyShiftService {
@@ -9,5 +10,18 @@ export class StudyShiftService {
 
   async create(studyShiftDto: CreateStudyShiftDto) {
     return this.studyShiftRepo.create(studyShiftDto);
+  }
+
+  async findAll(query: StudyShiftSearchDto) {
+    const [data, total] = await Promise.all([this.studyShiftRepo.findMany(query), this.studyShiftRepo.count(query)]);
+    return paginate(data, total, query);
+  }
+
+  async update(shiftId: string, dto: UpdateStudyShiftDto) {
+    return await this.studyShiftRepo.update(shiftId, dto);
+  }
+
+  async delete(shiftId: string) {
+    return await this.studyShiftRepo.delete(shiftId);
   }
 }
