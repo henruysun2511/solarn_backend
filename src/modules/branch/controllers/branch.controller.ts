@@ -1,9 +1,8 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, Query } from '@nestjs/common';
-import { ApiQuery } from '@nestjs/swagger';
-import { ResponseMessage } from 'common/decorators';
+import { ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { Public, ResponseMessage } from 'common/decorators';
 import { SortOrder } from 'common/enums';
 import { SwaggerDoc } from 'common/swagger';
-import { ApiBearerAuth } from '@nestjs/swagger';
 
 import { BranchSearchDto, CreateBranchDto } from '../dtos';
 import { UpdateBranchDto } from '../dtos/update-branch.dto';
@@ -42,6 +41,7 @@ export class BranchController {
     enum: Object.values(BranchSortBy),
     description: 'Sort field for branches.'
   })
+  @Public()
   @Get()
   @ResponseMessage('Lấy danh sách chi nhánh thành công')
   async findAll(@Query() query: BranchSearchDto) {
@@ -76,7 +76,7 @@ export class BranchController {
   })
   @Delete(':branchId')
   @ResponseMessage('Xóa thành công')
-  async softDelete(@Param('branchId') branchId: string) {
-    return this.branchService.softDelete(branchId);
+  async delete(@Param('branchId') branchId: string) {
+    return this.branchService.delete(branchId);
   }
 }

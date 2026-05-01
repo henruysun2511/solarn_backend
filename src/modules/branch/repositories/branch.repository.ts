@@ -59,7 +59,7 @@ export class BranchRepository {
   //   });
   // }
 
-  async softDelete(branchId: string) {
+  async delete(branchId: string) {
     return await this.prisma.branch.delete({
       where: { branchId }
     });
