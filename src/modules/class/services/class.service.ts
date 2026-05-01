@@ -19,14 +19,51 @@ export class ClassService {
     private readonly enrollmentService: EnrollmentService
   ) {}
 
+  /**
+   * Tạo lớp (business rules):
+   * - Lấy `totalSessions` từ `Course` để biết số buổi cần tạo.
+   * - Lấy `ScheduleTemplate` để xác định các thứ được phép học và `shiftCode`.
+   * - Sinh danh sách `sessions` (mỗi item: `{ shiftCode, studyDate }`).
+   * - Kiểm tra xung đột phòng (`roomCode`):
+   *     + Nếu tồn tại lớp khác dùng cùng `roomCode` mà có session trùng ngày+ca
+   *       với bất kỳ session vừa sinh và lớp đó chưa hoàn thành (không phải tất cả session đều `ENDED`),
+   *       thì chặn và trả `ConflictException` với `reason: CLASS_ROOM_SCHEDULE_CONFLICT`.
+   *     + Nếu lớp cũ đã hoàn thành (tất cả session = `ENDED`) thì cho phép tái sử dụng `roomCode`.
+   * - Kiểm tra xung đột giáo viên tương tự; nếu có thì trả `TEACHER_SCHEDULE_CONFLICT`.
+   * - Nếu không có xung đột, tạo `Class` và tạo các `ScheduleSession` tương ứng trong transaction.
+   */
   async create(dto: CreateClassDto) {
+    // Tổng số buổi cần tạo theo course
     const totalSessions = await this.courseService.getTotalSessions(dto.courseId);
+
+    // Lấy mẫu lịch để biết các weekday hợp lệ và shiftCode
     const scheduleTemplate = await this.scheduleTemplateService.getActiveById(dto.scheduleTemplateId);
 
+    // Sinh danh sách session cần tạo (dùng để kiểm tra xung đột và tạo record)
     const allowedWeekdays = parseWeekdays(scheduleTemplate.weekdays);
     const startDate = normalizeDate(dto.startDate);
     const sessions = generateScheduleSessions(startDate, allowedWeekdays, scheduleTemplate.shiftCode, totalSessions);
 
+    // Kiểm tra xung đột phòng: chỉ coi là conflict nếu có session trùng ngày+ca
+    // với một lớp còn buổi chưa kết thúc.
+    const roomConflicts = await this.classRepo.findRoomSessionConflicts(
+      dto.roomCode,
+      sessions.map((session) => ({
+        shiftCode: session.shiftCode,
+        studyDate: session.studyDate
+      }))
+    );
+
+    if (roomConflicts.length > 0) {
+      throw new ConflictException({
+        message: 'Phòng đang bị trùng lịch với lớp khác',
+        reason: 'CLASS_ROOM_SCHEDULE_CONFLICT',
+        roomCode: dto.roomCode,
+        conflicts: roomConflicts
+      });
+    }
+
+    // Kiểm tra xung đột lịch giáo viên (nếu giáo viên đã có buổi ở cùng ngày+ca)
     const conflicts = await this.scheduleSessionService.findTeacherSessionConflicts(
       dto.teacherId,
       sessions.map((session) => ({
@@ -44,8 +81,10 @@ export class ClassService {
       });
     }
 
+    // Nếu không có xung đột, tạo class và các sessions trong transaction
     return this.classRepo.create({
       classData: {
+        roomCode: dto.roomCode,
         startDate,
         maxStudents: dto.maxStudents,
         courseId: dto.courseId,

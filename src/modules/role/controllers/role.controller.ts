@@ -1,5 +1,5 @@
 import { Body, Controller, Post } from '@nestjs/common';
-import { ResponseMessage } from 'common/decorators';
+import { Public, ResponseMessage } from 'common/decorators';
 import { SwaggerDoc } from 'common/swagger';
 import { ApiTags } from '@nestjs/swagger';
 
@@ -11,6 +11,7 @@ import { CreateRoleDto } from '../dtos';
 export class RoleController {
   constructor(private readonly roleService: RoleService) {}
 
+  @Public()
   @SwaggerDoc({
     summary: 'Create Role',
     bodyType: CreateRoleDto,

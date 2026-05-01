@@ -1,11 +1,13 @@
 import { Body, Controller, Param, Patch } from '@nestjs/common';
 import { ResponseMessage } from 'common/decorators';
 import { SwaggerDoc } from 'common/swagger';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 import { ScheduleSessionService } from '../services/schedule-session.service';
 import { UpdateSessionStatusDto } from '../dtos';
 
 @Controller('schedule-session')
+@ApiBearerAuth()
 export class ScheduleSessionController {
   constructor(private readonly scheduleSessionService: ScheduleSessionService) {}
 

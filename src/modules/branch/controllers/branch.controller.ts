@@ -1,11 +1,13 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { ResponseMessage } from 'common/decorators';
 import { SwaggerDoc } from 'common/swagger';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 import { BranchService } from '../services/branch.service';
 import { CreateBranchDto } from '../dtos';
 
 @Controller('branchs')
+@ApiBearerAuth()
 export class BranchController {
   constructor(private readonly branchService: BranchService) {}
 

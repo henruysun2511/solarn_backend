@@ -1,11 +1,13 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { ResponseMessage } from 'common/decorators';
 import { SwaggerDoc } from 'common/swagger';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 import { CourseService } from '../services/course.service';
 import { CreateCourseDto } from '../dtos';
 
 @Controller('courses')
+@ApiBearerAuth()
 export class CourseController {
   constructor(private readonly courseService: CourseService) {}
 

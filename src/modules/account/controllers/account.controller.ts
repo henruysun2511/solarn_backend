@@ -1,6 +1,7 @@
 import { Body, Controller, Param, Patch, Post } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { SwaggerDoc } from 'common/swagger';
+import { Public } from 'common/decorators';
 
 import { AccountService } from '../services/account.service';
 import { CreateAccountDto, UpdateAccountStatusDto } from '../dtos';
@@ -10,6 +11,7 @@ import { CreateAccountDto, UpdateAccountStatusDto } from '../dtos';
 export class AccountController {
   constructor(private readonly accountService: AccountService) {}
 
+  @Public()
   @SwaggerDoc({
     summary: 'Create Account',
     bodyType: CreateAccountDto,

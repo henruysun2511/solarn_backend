@@ -130,6 +130,7 @@ model Room {
   branchId String? @map("branch_id")
 
   branch Branch? @relation(fields: [branchId], references: [branchId], onDelete: SetNull)
+  Class  Class[]
 
   @@index([branchId])
   @@map("rooms")
@@ -325,7 +326,9 @@ model Class {
   startDate          DateTime @map("start_date")
   maxStudents        Int      @map("max_students")
   scheduleTemplateId String?  @map("schedule_template_id")
+  roomCode           String   @map("room_code")
 
+  room             Room                   @relation(fields: [roomCode], references: [roomCode], onDelete: Restrict)
   course           Course                 @relation(fields: [courseId], references: [courseId], onDelete: Restrict)
   teacher          Teacher                @relation(fields: [teacherId], references: [teacherId], onDelete: Restrict)
   scheduleTemplate ClassScheduleTemplate? @relation(fields: [scheduleTemplateId], references: [templateId], onDelete: SetNull)

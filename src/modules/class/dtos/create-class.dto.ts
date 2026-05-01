@@ -1,6 +1,6 @@
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsDateString, IsInt, IsNotEmpty, IsUUID, Min } from 'class-validator';
+import { IsDateString, IsInt, IsNotEmpty, IsString, IsUUID, Min } from 'class-validator';
 
 export class CreateClassDto {
   @ApiProperty({ format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440000' })
@@ -35,4 +35,12 @@ export class CreateClassDto {
   @IsUUID()
   @IsNotEmpty()
   scheduleTemplateId: string;
+
+  @ApiProperty({
+    example: 'D6-404',
+    description: 'Mã phòng'
+  })
+  @IsString()
+  @IsNotEmpty()
+  roomCode: string;
 }

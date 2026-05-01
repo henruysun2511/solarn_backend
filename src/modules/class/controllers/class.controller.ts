@@ -1,11 +1,13 @@
 import { Body, Controller, Param, Post } from '@nestjs/common';
 import { ResponseMessage } from 'common/decorators';
 import { SwaggerDoc } from 'common/swagger';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 import { ClassService } from '../services/class.service';
 import { AddStudentToClassDto, CreateClassDto } from '../dtos';
 
 @Controller('classes')
+@ApiBearerAuth()
 export class ClassController {
   constructor(private readonly classService: ClassService) {}
 
