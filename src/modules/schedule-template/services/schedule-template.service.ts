@@ -1,7 +1,8 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { paginate } from 'shared/helpers';
 import { parseWeekdays } from 'modules/class/utils/schedule-generator';
 
-import { CreateScheduleTemplateDto } from '../dtos';
+import { CreateScheduleTemplateDto, ScheduleTemplateSearchDto, UpdateScheduleTemplateDto } from '../dtos';
 import { ScheduleTemplateRepository } from '../repositories/schedule-template.repository';
 
 @Injectable()
@@ -18,6 +19,30 @@ export class ScheduleTemplateService {
     }
 
     return this.templateRepo.create(dto);
+  }
+
+  async findAll(query: ScheduleTemplateSearchDto) {
+    const [data, total] = await Promise.all([this.templateRepo.findMany(query), this.templateRepo.count(query)]);
+    return paginate(data, total, query);
+  }
+
+  async update(templateId: string, dto: UpdateScheduleTemplateDto) {
+    if (dto.weekdays) {
+      parseWeekdays(dto.weekdays);
+    }
+
+    if (dto.shiftCode) {
+      const shift = await this.templateRepo.findShiftByCode(dto.shiftCode);
+      if (!shift) {
+        throw new BadRequestException('Ca học không tồn tại');
+      }
+    }
+
+    return await this.templateRepo.update(templateId, dto);
+  }
+
+  async delete(templateId: string) {
+    return await this.templateRepo.delete(templateId);
   }
 
   async getActiveById(templateId: string) {
