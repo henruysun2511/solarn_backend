@@ -11,6 +11,10 @@ export class EnrollmentService {
     return this.enrollmentRepo.findByStudentAndClass(studentId, classId);
   }
 
+  findByIdWithStudentAndClass(enrollmentId: string) {
+    return this.enrollmentRepo.findByIdWithStudentAndClass(enrollmentId);
+  }
+
   countActiveByClassId(classId: string) {
     return this.enrollmentRepo.countActiveByClassId(classId);
   }

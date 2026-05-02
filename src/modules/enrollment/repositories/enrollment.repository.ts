@@ -17,6 +17,23 @@ export class EnrollmentRepository {
     });
   }
 
+  findByIdWithStudentAndClass(enrollmentId: string) {
+    return this.prisma.enrollment.findUnique({
+      where: { enrollmentId },
+      select: {
+        enrollmentId: true,
+        studentId: true,
+        classId: true,
+        status: true,
+        class: {
+          select: {
+            classId: true
+          }
+        }
+      }
+    });
+  }
+
   countActiveByClassId(classId: string) {
     return this.prisma.enrollment.count({
       where: {

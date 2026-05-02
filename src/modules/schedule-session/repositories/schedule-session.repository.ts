@@ -49,11 +49,61 @@ export class ScheduleSessionRepository {
     });
   }
 
+  findByIdWithClassTeacher(sessionId: string) {
+    return this.prisma.scheduleSession.findUnique({
+      where: { sessionId },
+      select: {
+        sessionId: true,
+        classId: true,
+        shiftCode: true,
+        studyDate: true,
+        class: {
+          select: {
+            teacherId: true
+          }
+        }
+      }
+    });
+  }
+
+  findSessionConflict(shiftCode: string, studyDate: Date, excludeSessionId?: string) {
+    return this.prisma.scheduleSession.findFirst({
+      where: {
+        shiftCode,
+        studyDate,
+        ...(excludeSessionId ? { NOT: { sessionId: excludeSessionId } } : {})
+      },
+      select: {
+        sessionId: true,
+        classId: true,
+        shiftCode: true,
+        studyDate: true
+      }
+    });
+  }
+
   updateStatus(sessionId: string, status: ClassSessionStatus) {
     return this.prisma.scheduleSession.update({
       where: { sessionId },
       data: { status },
       select: { sessionId: true, status: true, studyDate: true, shiftCode: true, classId: true }
+    });
+  }
+
+  countByClassId(classId: string) {
+    return this.prisma.scheduleSession.count({
+      where: {
+        classId
+      }
+    });
+  }
+
+  countEndedByClassId(classId: string) {
+    return this.prisma.scheduleSession.count({
+      where: {
+        classId,
+        status: ClassSessionStatus.ENDED
+      }
     });
   }
 

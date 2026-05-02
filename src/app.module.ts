@@ -11,6 +11,7 @@ import { ScheduleTemplateModule } from 'modules/schedule-template/schedule-templ
 import { AttendanceModule } from 'modules/attendance/attendance.module';
 import { AssignmentResultModule } from 'modules/assignment-result/assignment-result.module';
 import { SalaryModule } from 'modules/salary/salary.module';
+import { RequestModule } from 'modules/request/request.module';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -35,6 +36,7 @@ import { AuthModule } from './modules/auth/auth.module';
     StudyShiftModule,
     AttendanceModule,
     AssignmentResultModule,
+    RequestModule,
     SalaryModule,
     ScheduleTemplateModule,
     SharedModule

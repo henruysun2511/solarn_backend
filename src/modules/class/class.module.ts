@@ -12,6 +12,7 @@ import { ClassRepository } from './repositories/class.repository';
 @Module({
   imports: [PrismaModule, CourseModule, ScheduleTemplateModule, EnrollmentModule, ScheduleSessionModule],
   controllers: [ClassController],
-  providers: [ClassService, ClassRepository]
+  providers: [ClassService, ClassRepository],
+  exports: [ClassService]
 })
 export class ClassModule {}

@@ -9,6 +9,7 @@ import { SalaryRepository } from './repositories/salary.repository';
 @Module({
   imports: [TeacherModule, ScheduleSessionModule],
   controllers: [SalaryController],
-  providers: [SalaryService, SalaryRepository]
+  providers: [SalaryService, SalaryRepository],
+  exports: [SalaryService]
 })
 export class SalaryModule {}

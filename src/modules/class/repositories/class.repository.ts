@@ -34,8 +34,28 @@ export class ClassRepository {
   findById(classId: string) {
     return this.prisma.class.findUnique({
       where: { classId },
-      select: { classId: true, startDate: true, maxStudents: true }
+      select: { classId: true, startDate: true, maxStudents: true, courseId: true }
     });
+  }
+
+  async getClassMeta(classId: string): Promise<{
+    classId: string;
+    courseId: string;
+    isOngoing: boolean;
+  } | null> {
+    const cls = await this.prisma.class.findUnique({
+      where: { classId },
+      select: {
+        classId: true,
+        courseId: true,
+        sessions: { select: { status: true } }
+      }
+    });
+
+    if (!cls) return null;
+
+    const isOngoing = cls.sessions.some((s) => s.status !== ClassSessionStatus.ENDED);
+    return { classId: cls.classId, courseId: cls.courseId, isOngoing };
   }
 
   findByRoomCode(roomCode: string) {

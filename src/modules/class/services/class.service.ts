@@ -119,4 +119,8 @@ export class ClassService {
 
     return this.enrollmentService.create(studentId, classId, status);
   }
+
+  async getClassMeta(classId: string) {
+    return this.classRepo.getClassMeta(classId);
+  }
 }

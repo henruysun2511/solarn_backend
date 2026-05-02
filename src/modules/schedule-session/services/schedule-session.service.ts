@@ -84,8 +84,28 @@ export class ScheduleSessionService {
     return this.scheduleSessionRepo.updateStatus(sessionId, status);
   }
 
+  async getClassProgressStats(classId: string) {
+    const [totalSessions, endedSessions] = await Promise.all([
+      this.scheduleSessionRepo.countByClassId(classId),
+      this.scheduleSessionRepo.countEndedByClassId(classId)
+    ]);
+
+    return {
+      totalSessions,
+      endedSessions
+    };
+  }
+
   findTeacherSessionConflicts(teacherId: string, sessions: Array<{ shiftCode: string; studyDate: Date }>) {
     return this.scheduleSessionRepo.findTeacherSessionConflicts(teacherId, sessions);
+  }
+
+  findByIdWithClassTeacher(sessionId: string) {
+    return this.scheduleSessionRepo.findByIdWithClassTeacher(sessionId);
+  }
+
+  findSessionConflict(shiftCode: string, studyDate: Date, excludeSessionId?: string) {
+    return this.scheduleSessionRepo.findSessionConflict(shiftCode, studyDate, excludeSessionId);
   }
 
   getSessionMetaMap(sessionIds: string[]) {
