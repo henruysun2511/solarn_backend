@@ -3,9 +3,10 @@ import { AppConfig } from 'common/constants';
 import { hashPassword } from 'common/utils';
 import { RoleService } from 'modules/role/services/role.service';
 import { AccountStatus } from '@prisma/client';
+import { paginate } from 'shared/helpers';
 
 import { AccountRepository } from '../repositories/account.repository';
-import { CreateAccountDto, RegisterStudentDto } from '../dtos';
+import { AccountSearchDto, CreateAccountDto, RegisterStudentDto } from '../dtos';
 
 @Injectable()
 export class AccountService {
@@ -13,6 +14,11 @@ export class AccountService {
     private readonly accountRepo: AccountRepository,
     private readonly roleService: RoleService
   ) {}
+
+  async findAll(query: AccountSearchDto) {
+    const [data, total] = await Promise.all([this.accountRepo.findMany(query), this.accountRepo.count(query)]);
+    return paginate(data, total, query);
+  }
 
   async create(accountDto: CreateAccountDto) {
     if (accountDto.password !== accountDto.passwordConfirm) {

@@ -4,9 +4,52 @@ import { PrismaService } from 'prisma/prisma.service';
 import { AppConfig } from 'common/constants';
 import { generateCode } from 'common/utils';
 
+import { AccountSearchDto } from '../dtos';
+
 @Injectable()
 export class AccountRepository {
   constructor(private readonly prisma: PrismaService) {}
+
+  async findMany(query: AccountSearchDto) {
+    const { page, limit, search, sortBy, sortOrder, roleId, username } = query;
+    return this.prisma.account.findMany({
+      where: {
+        ...(search ? { username: { contains: search, mode: 'insensitive' } } : {}),
+        ...(username ? { username: { contains: username, mode: 'insensitive' } } : {}),
+        ...(roleId ? { roleId } : {})
+      },
+      orderBy: { [sortBy]: sortOrder },
+      skip: (page - 1) * limit,
+      take: limit,
+      select: {
+        accountId: true,
+        username: true,
+        status: true,
+        roleId: true,
+        createdAt: true,
+        role: { select: { roleName: true } },
+        profile: {
+          select: {
+            fullName: true,
+            email: true,
+            phone: true,
+            avatarUrl: true
+          }
+        }
+      }
+    });
+  }
+
+  async count(query: AccountSearchDto) {
+    const { search, roleId, username } = query;
+    return this.prisma.account.count({
+      where: {
+        ...(search ? { username: { contains: search, mode: 'insensitive' } } : {}),
+        ...(username ? { username: { contains: username, mode: 'insensitive' } } : {}),
+        ...(roleId ? { roleId } : {})
+      }
+    });
+  }
 
   async findByUsername(username: string): Promise<Account | null> {
     return this.prisma.account.findUnique({ where: { username } });
