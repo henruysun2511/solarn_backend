@@ -1,6 +1,7 @@
 import { Body, Controller, Delete, Post, UploadedFile } from '@nestjs/common';
 import { MediaUploadInterceptor } from 'common/interceptors';
 import { ApiBearerAuth } from '@nestjs/swagger';
+import { Public } from 'common/decorators';
 
 import { CloudinaryService } from './cloudinary.service';
 import { DeleteMediaDto } from './dtos';
@@ -11,6 +12,7 @@ import { CLOUDINARY_FOLDERS } from './constants';
 export class CloudinaryController {
   constructor(private readonly cloudinaryService: CloudinaryService) {}
 
+  @Public()
   @Post('media')
   @MediaUploadInterceptor()
   async uploadImages(@UploadedFile() file: Express.Multer.File, @Body('folder') folder: string) {
