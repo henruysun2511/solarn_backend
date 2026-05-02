@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post } from '@nestjs/common';
 import { Public, ResponseMessage } from 'common/decorators';
 import { SwaggerDoc } from 'common/swagger';
 import { ApiTags } from '@nestjs/swagger';
@@ -10,6 +10,16 @@ import { CreateRoleDto } from '../dtos';
 @ApiTags('Roles')
 export class RoleController {
   constructor(private readonly roleService: RoleService) {}
+
+  @SwaggerDoc({
+    summary: 'Get All Roles',
+    status: 200
+  })
+  @Get('')
+  @ResponseMessage('Lấy danh sách quyền thành công')
+  async findAll() {
+    return this.roleService.findAll();
+  }
 
   @Public()
   @SwaggerDoc({

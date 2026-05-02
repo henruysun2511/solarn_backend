@@ -1,12 +1,12 @@
 import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Public, ResponseMessage } from 'common/decorators';
-import { SwaggerDoc } from 'common/swagger';
 import { SortOrder } from 'common/enums';
+import { SwaggerDoc } from 'common/swagger';
 
 import { AccountSearchDto, CreateAccountDto, UpdateAccountStatusDto } from '../dtos';
-import { AccountService } from '../services/account.service';
 import { AccountSortBy } from '../enums/account-sort-by.enum';
+import { AccountService } from '../services/account.service';
 
 @Controller('accounts')
 @ApiTags('Accounts')
@@ -37,6 +37,7 @@ export class AccountController {
     enum: Object.values(AccountSortBy),
     description: 'Sort field for accounts.'
   })
+  @Public()
   @Get()
   @ResponseMessage('Lấy danh sách tài khoản thành công')
   async findAll(@Query() query: AccountSearchDto) {

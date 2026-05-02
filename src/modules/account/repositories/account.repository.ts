@@ -33,7 +33,8 @@ export class AccountRepository {
             fullName: true,
             email: true,
             phone: true,
-            avatarUrl: true
+            avatarUrl: true,
+            gender: true
           }
         }
       }
