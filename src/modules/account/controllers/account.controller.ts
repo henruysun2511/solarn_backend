@@ -1,10 +1,10 @@
 import { Body, Controller, Param, Patch, Post } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { SwaggerDoc } from 'common/swagger';
 import { Public } from 'common/decorators';
+import { SwaggerDoc } from 'common/swagger';
 
-import { AccountService } from '../services/account.service';
 import { CreateAccountDto, UpdateAccountStatusDto } from '../dtos';
+import { AccountService } from '../services/account.service';
 
 @Controller('accounts')
 @ApiTags('Accounts')
