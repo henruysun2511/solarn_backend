@@ -1,15 +1,15 @@
 import { Body, Controller, HttpCode, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { SwaggerDoc } from 'common/swagger';
 import { Public, ResponseMessage } from 'common/decorators';
-import { RegisterStudentDto } from 'modules/account/dtos';
-import { Response } from 'express';
 import { RequestWithUser } from 'common/interfaces';
+import { SwaggerDoc } from 'common/swagger';
+import { Response } from 'express';
+import { RegisterStudentDto } from 'modules/account/dtos';
 
-import { AuthService } from '../services/auth.service';
 import { LoginDto, VerifyOtpDto } from '../dtos';
-import { OtpService } from '../services/otp.service';
 import { LocalAuthGuard } from '../guards';
+import { AuthService } from '../services/auth.service';
+import { OtpService } from '../services/otp.service';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -35,6 +35,7 @@ export class AuthController {
   }
 
   @Post('sign-up')
+  @Public()
   @ResponseMessage('Đăng kí thành công. Vui lòng đợi quản trị viên kích hoạt tài khoản.')
   @SwaggerDoc({
     summary: 'Đăng kí tài khoản sinh viên',
@@ -46,6 +47,7 @@ export class AuthController {
   }
 
   @Post('verify-email')
+  @Public()
   @ResponseMessage('Xác thực thành công')
   @SwaggerDoc({
     summary: 'Xác thực email',

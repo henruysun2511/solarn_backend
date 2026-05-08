@@ -24,4 +24,8 @@ export class RoleRepository {
 
     return role?.roleName ?? null;
   }
+
+  async findAll() {
+    return this.prisma.role.findMany();
+  }
 }

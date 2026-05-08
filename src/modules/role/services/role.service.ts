@@ -18,4 +18,8 @@ export class RoleService {
   async getNameByRoleId(roleId: string) {
     return this.roleRepo.getNameByRoleId(roleId);
   }
+
+  async findAll() {
+    return this.roleRepo.findAll();
+  }
 }
