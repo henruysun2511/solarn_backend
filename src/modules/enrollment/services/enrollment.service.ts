@@ -29,4 +29,8 @@ export class EnrollmentService {
     const pairs = await this.enrollmentRepo.findStudentClassPairs(studentIds, classIds);
     return new Set(pairs.map((p) => `${p.studentId}:${p.classId}`));
   }
+
+  findActiveEnrollmentsByCourseId(courseId: string) {
+    return this.enrollmentRepo.findActiveEnrollmentsByCourseId(courseId);
+  }
 }

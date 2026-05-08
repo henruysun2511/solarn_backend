@@ -37,4 +37,27 @@ export class AttendanceRepository {
 
     return this.prisma.$transaction(queries);
   }
+
+  async findEndedAttendancesForProgress(studentIds: string[], classIds: string[]) {
+    if (studentIds.length === 0 || classIds.length === 0) return [];
+
+    return await this.prisma.attendance.findMany({
+      where: {
+        studentId: { in: studentIds },
+        session: {
+          classId: { in: classIds },
+          status: 'ENDED'
+        }
+      },
+      select: {
+        studentId: true,
+        status: true,
+        session: {
+          select: {
+            classId: true
+          }
+        }
+      }
+    });
+  }
 }

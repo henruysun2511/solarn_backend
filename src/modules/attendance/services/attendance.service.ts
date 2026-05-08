@@ -63,4 +63,8 @@ export class AttendanceService {
     await this.assertStudentsBelongToSessionClass(items);
     return this.attendanceRepo.upsertMany(items);
   }
+
+  findEndedAttendancesForProgress(studentIds: string[], classIds: string[]) {
+    return this.attendanceRepo.findEndedAttendancesForProgress(studentIds, classIds);
+  }
 }

@@ -96,6 +96,10 @@ export class ScheduleSessionService {
     };
   }
 
+  getClassProgressStatsMap(classIds: string[]) {
+    return this.scheduleSessionRepo.countStatsByClassIds(classIds);
+  }
+
   findTeacherSessionConflicts(teacherId: string, sessions: Array<{ shiftCode: string; studyDate: Date }>) {
     return this.scheduleSessionRepo.findTeacherSessionConflicts(teacherId, sessions);
   }

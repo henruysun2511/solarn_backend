@@ -5,6 +5,7 @@ import { SwaggerDoc } from 'common/swagger';
 import { SortOrder } from 'common/enums';
 
 import { CourseService } from '../services/course.service';
+import { CourseProgressService } from '../services/course-progress.service';
 import { CreateCourseDto, CourseSearchDto, UpdateCourseDto } from '../dtos';
 import { CourseSortBy } from '../enums/course-sort-by.enum';
 
@@ -12,7 +13,10 @@ import { CourseSortBy } from '../enums/course-sort-by.enum';
 @ApiTags('Courses')
 @ApiBearerAuth()
 export class CourseController {
-  constructor(private readonly courseService: CourseService) {}
+  constructor(
+    private readonly courseService: CourseService,
+    private readonly courseProgressService: CourseProgressService
+  ) {}
 
   @SwaggerDoc({
     summary: 'Get All Courses',
@@ -42,6 +46,17 @@ export class CourseController {
   @ResponseMessage('Lấy danh sách khóa học thành công')
   async findAll(@Query() query: CourseSearchDto) {
     return await this.courseService.findAll(query);
+  }
+
+  @SwaggerDoc({
+    summary: 'Get student progress list by course',
+    description: 'Danh sách tiến độ học viên trong khóa học (tính buổi đi học và buổi nghỉ).',
+    status: 200
+  })
+  @Get(':courseId/students/progress')
+  @ResponseMessage('Lấy danh sách tiến độ học viên thành công')
+  async getStudentProgressList(@Param('courseId') courseId: string) {
+    return this.courseProgressService.getStudentProgressList(courseId);
   }
 
   @SwaggerDoc({
