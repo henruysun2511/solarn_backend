@@ -33,6 +33,9 @@ jobs:
       OTP_EXPIRE_MINUTES: d'3'
       LOGTAIL_LEVEL: 'warn'
       LOG_FILE_PATH: 'logs/app.log'
+      PAYOS_CLIENT_ID: ${{secrets.PAYOS_CLIENT_ID}}
+      PAYOS_API_KEY: ${{secrets.PAYOS_API_KEY}}
+      PAYOS_CHECKSUM_KEY: ${{secrets.PAYOS_CHECKSUM_KEY}}
 
     steps:
       - uses: actions/checkout@v4

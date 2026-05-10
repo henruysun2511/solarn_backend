@@ -1,4 +1,5 @@
 import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { EnrollmentStatus } from '@prisma/client';
 import { CourseService } from 'modules/course/services/course.service';
 import { EnrollmentService } from 'modules/enrollment/services/enrollment.service';
@@ -122,5 +123,14 @@ export class ClassService {
 
   async getClassMeta(classId: string) {
     return this.classRepo.getClassMeta(classId);
+  }
+
+  async getTuitionFeeByClassIdOrThrow(classId: string): Promise<Prisma.Decimal> {
+    const tuitionFee = await this.classRepo.getTuitionFeeByClassId(classId);
+    if (!tuitionFee) {
+      throw new BadRequestException('Lớp không tồn tại');
+    }
+
+    return tuitionFee;
   }
 }

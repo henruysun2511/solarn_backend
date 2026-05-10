@@ -24,6 +24,11 @@ export const AppConfig = {
     SALT_ROUNDS: 10
   },
 
+  INVOICE: {
+    CANCEL_URL: '',
+    RETURN_URL: ''
+  },
+
   CORS: {
     ORIGINS: process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : 'http://localhost:3001',
     METHODS: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',

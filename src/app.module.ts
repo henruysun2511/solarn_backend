@@ -14,6 +14,7 @@ import { SalaryModule } from 'modules/salary/salary.module';
 import { RequestModule } from 'modules/request/request.module';
 import { FeedbackModule } from 'modules/feedback/feedback.module';
 import { CloudinaryModule } from 'modules/cloudinary/cloudinary.module';
+import { InvoiceModule } from 'modules/payment/invoice.module';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -43,6 +44,7 @@ import { AuthModule } from './modules/auth/auth.module';
     RequestModule,
     SalaryModule,
     ScheduleTemplateModule,
+    InvoiceModule,
     SharedModule
   ],
   controllers: [AppController],

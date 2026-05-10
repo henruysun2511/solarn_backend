@@ -545,11 +545,12 @@ model AssignmentResult {
 }
 
 model Invoice {
-  invoiceId String        @id @default(uuid()) @map("invoice_id")
-  studentId String        @map("student_id")
-  classId   String        @map("class_id")
-  amount    Decimal       @map("amount") @db.Decimal(12, 2)
-  status    InvoiceStatus @default(PENDING) @map("status")
+  invoiceId     String        @id @default(uuid()) @map("invoice_id")
+  studentId     String        @map("student_id")
+  classId       String        @map("class_id")
+  amount        Decimal       @map("amount") @db.Decimal(12, 2)
+  status        InvoiceStatus @default(PENDING) @map("status")
+  transactionId String        @unique @map("transaction_id")
 
   student Student @relation(fields: [studentId], references: [studentId], onDelete: Cascade)
   class   Class   @relation(fields: [classId], references: [classId], onDelete: Cascade)
