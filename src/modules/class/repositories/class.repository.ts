@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { ClassSessionStatus } from '@prisma/client';
+import { ClassSessionStatus, Prisma } from '@prisma/client';
 import { PrismaService } from 'prisma/prisma.service';
 
 interface CreateClassData {
@@ -56,6 +56,21 @@ export class ClassRepository {
 
     const isOngoing = cls.sessions.some((s) => s.status !== ClassSessionStatus.ENDED);
     return { classId: cls.classId, courseId: cls.courseId, isOngoing };
+  }
+
+  async getTuitionFeeByClassId(classId: string): Promise<Prisma.Decimal | null> {
+    const cls = await this.prisma.class.findUnique({
+      where: { classId },
+      select: {
+        course: {
+          select: {
+            tuitionFee: true
+          }
+        }
+      }
+    });
+
+    return cls?.course.tuitionFee ?? null;
   }
 
   findByRoomCode(roomCode: string) {

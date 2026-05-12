@@ -62,4 +62,40 @@ export class EnrollmentRepository {
       select: { studentId: true, classId: true }
     });
   }
+
+  findActiveEnrollmentsByCourseId(courseId: string) {
+    return this.prisma.enrollment.findMany({
+      where: {
+        class: { courseId },
+        NOT: { status: EnrollmentStatus.DROPPED }
+      },
+      select: {
+        enrollmentId: true,
+        status: true,
+        createdAt: true,
+        studentId: true,
+        classId: true,
+        student: {
+          select: {
+            studentId: true,
+            studentCode: true,
+            profile: {
+              select: {
+                fullName: true,
+                email: true,
+                phone: true
+              }
+            }
+          }
+        },
+        class: {
+          select: {
+            classId: true,
+            roomCode: true,
+            startDate: true
+          }
+        }
+      }
+    });
+  }
 }
