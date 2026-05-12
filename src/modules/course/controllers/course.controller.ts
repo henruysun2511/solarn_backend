@@ -1,12 +1,12 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { ResponseMessage, Public } from 'common/decorators';
-import { SwaggerDoc } from 'common/swagger';
+import { Public, ResponseMessage } from 'common/decorators';
 import { SortOrder } from 'common/enums';
+import { SwaggerDoc } from 'common/swagger';
 
-import { CourseService } from '../services/course.service';
-import { CreateCourseDto, CourseSearchDto, UpdateCourseDto } from '../dtos';
+import { CourseSearchDto, CreateCourseDto, UpdateCourseDto } from '../dtos';
 import { CourseSortBy } from '../enums/course-sort-by.enum';
+import { CourseService } from '../services/course.service';
 
 @Controller('courses')
 @ApiTags('Courses')
@@ -49,6 +49,7 @@ export class CourseController {
     bodyType: CreateCourseDto,
     status: 201
   })
+  @Public()
   @Post('')
   @ResponseMessage('Thêm thành công')
   async create(@Body() dto: CreateCourseDto) {
