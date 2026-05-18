@@ -1,15 +1,27 @@
-import { Body, Controller, Post } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { RequestStatus } from '@prisma/client';
+import { Public, ResponseMessage, User } from 'common/decorators';
+import { SortOrder } from 'common/enums';
 import { IAccountRequest } from 'common/interfaces';
-import { User } from 'common/decorators';
 import { SwaggerDoc } from 'common/swagger';
 
 import {
   CreateLeaveRequestDto,
   CreateSalaryComplaintDto,
   CreateScheduleChangeDto,
-  CreateTransferRequestDto
+  CreateTransferRequestDto,
+  LeaveRequestSearchDto,
+  SalaryComplaintSearchDto,
+  ScheduleChangeSearchDto,
+  TransferRequestSearchDto
 } from '../dtos';
+import {
+  LeaveRequestSortBy,
+  SalaryComplaintSortBy,
+  ScheduleChangeSortBy,
+  TransferRequestSortBy
+} from '../enums/request-sort-by.enum';
 import { RequestService } from '../services/request.service';
 
 @ApiTags('Requests')
@@ -17,6 +29,87 @@ import { RequestService } from '../services/request.service';
 @ApiBearerAuth()
 export class RequestController {
   constructor(private readonly requestService: RequestService) {}
+
+  @SwaggerDoc({
+    summary: 'Lấy danh sách khiếu nại lương',
+    description: 'Retrieve salary complaints with pagination, sorting, search and filters',
+    status: 200
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'status', required: false, enum: RequestStatus })
+  @ApiQuery({ name: 'senderAccountId', required: false, type: String })
+  @ApiQuery({ name: 'salaryId', required: false, type: String })
+  @ApiQuery({ name: 'sortOrder', required: false, enum: SortOrder })
+  @ApiQuery({ name: 'sortBy', required: false, enum: Object.values(SalaryComplaintSortBy) })
+  @Public()
+  @Get('salary-complaint')
+  @ResponseMessage('Lấy danh sách khiếu nại lương thành công')
+  async findAllSalaryComplaints(@Query() query: SalaryComplaintSearchDto, @User() user?: IAccountRequest) {
+    return this.requestService.findAllSalaryComplaints(query, user);
+  }
+
+  @SwaggerDoc({
+    summary: 'Lấy danh sách yêu cầu chuyển lớp',
+    description: 'Retrieve class transfer requests with pagination, sorting, search and filters',
+    status: 200
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'status', required: false, enum: RequestStatus })
+  @ApiQuery({ name: 'senderAccountId', required: false, type: String })
+  @ApiQuery({ name: 'fromClassId', required: false, type: String })
+  @ApiQuery({ name: 'toClassId', required: false, type: String })
+  @ApiQuery({ name: 'sortOrder', required: false, enum: SortOrder })
+  @ApiQuery({ name: 'sortBy', required: false, enum: Object.values(TransferRequestSortBy) })
+  @Public()
+  @Get('transfer')
+  @ResponseMessage('Lấy danh sách yêu cầu chuyển lớp thành công')
+  async findAllTransferRequests(@Query() query: TransferRequestSearchDto, @User() user?: IAccountRequest) {
+    return this.requestService.findAllTransferRequests(query, user);
+  }
+
+  @SwaggerDoc({
+    summary: 'Lấy danh sách yêu cầu bảo lưu',
+    description: 'Retrieve course deferral/leave requests with pagination, sorting, search and filters',
+    status: 200
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'status', required: false, enum: RequestStatus })
+  @ApiQuery({ name: 'senderAccountId', required: false, type: String })
+  @ApiQuery({ name: 'enrollmentId', required: false, type: String })
+  @ApiQuery({ name: 'sortOrder', required: false, enum: SortOrder })
+  @ApiQuery({ name: 'sortBy', required: false, enum: Object.values(LeaveRequestSortBy) })
+  @Public()
+  @Get('leave-request')
+  @ResponseMessage('Lấy danh sách yêu cầu bảo lưu thành công')
+  async findAllLeaveRequests(@Query() query: LeaveRequestSearchDto, @User() user?: IAccountRequest) {
+    return this.requestService.findAllLeaveRequests(query, user);
+  }
+
+  @SwaggerDoc({
+    summary: 'Lấy danh sách yêu cầu đổi lịch/ca học',
+    description: 'Retrieve schedule change requests with pagination, sorting, search and filters',
+    status: 200
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'status', required: false, enum: RequestStatus })
+  @ApiQuery({ name: 'senderAccountId', required: false, type: String })
+  @ApiQuery({ name: 'sessionId', required: false, type: String })
+  @ApiQuery({ name: 'sortOrder', required: false, enum: SortOrder })
+  @ApiQuery({ name: 'sortBy', required: false, enum: Object.values(ScheduleChangeSortBy) })
+  @Public()
+  @Get('schedule-change')
+  @ResponseMessage('Lấy danh sách yêu cầu đổi ca thành công')
+  async findAllScheduleChanges(@Query() query: ScheduleChangeSearchDto, @User() user?: IAccountRequest) {
+    return this.requestService.findAllScheduleChanges(query, user);
+  }
 
   @SwaggerDoc({
     summary: 'Tạo request khiếu nại lương',
