@@ -5,8 +5,9 @@ import { CourseService } from 'modules/course/services/course.service';
 import { EnrollmentService } from 'modules/enrollment/services/enrollment.service';
 import { ScheduleSessionService } from 'modules/schedule-session/services/schedule-session.service';
 import { ScheduleTemplateService } from 'modules/schedule-template/services/schedule-template.service';
+import { paginate } from 'shared/helpers';
 
-import { CreateClassDto } from '../dtos';
+import { CreateClassDto, ClassSearchByCourseDto } from '../dtos';
 import { ClassRepository } from '../repositories/class.repository';
 import { generateScheduleSessions, normalizeDate, parseWeekdays } from '../utils';
 
@@ -132,5 +133,22 @@ export class ClassService {
     }
 
     return tuitionFee;
+  }
+
+  async findAllByCourseId(courseId: string, query: ClassSearchByCourseDto) {
+    const [classes, total] = await Promise.all([
+      this.classRepo.findManyByCourseId(courseId, query),
+      this.classRepo.countByCourseId(courseId)
+    ]);
+
+    const data = classes.map((c) => {
+      const { _count, ...rest } = c;
+      return {
+        ...rest,
+        registeredStudents: _count.enrollments
+      };
+    });
+
+    return paginate(data, total, query);
   }
 }

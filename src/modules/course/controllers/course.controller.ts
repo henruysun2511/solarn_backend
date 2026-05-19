@@ -49,6 +49,18 @@ export class CourseController {
   }
 
   @SwaggerDoc({
+    summary: 'Get Course Details',
+    description: 'Retrieve details of a specific course, including totalClasses count.',
+    status: 200
+  })
+  @Public()
+  @Get(':courseId')
+  @ResponseMessage('Lấy chi tiết khóa học thành công')
+  async findOne(@Param('courseId') courseId: string) {
+    return await this.courseService.findOne(courseId);
+  }
+
+  @SwaggerDoc({
     summary: 'Get student progress list by course',
     description: 'Danh sách tiến độ học viên trong khóa học (tính buổi đi học và buổi nghỉ).',
     status: 200

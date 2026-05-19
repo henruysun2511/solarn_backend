@@ -53,4 +53,16 @@ export class CourseService {
 
     return course.totalSessions;
   }
+
+  async findOne(courseId: string) {
+    const course = await this.courseRepo.findById(courseId);
+    if (!course) {
+      throw new BadRequestException('Khóa học không tồn tại');
+    }
+    const { _count, ...rest } = course;
+    return {
+      ...rest,
+      totalClasses: _count.classes
+    };
+  }
 }

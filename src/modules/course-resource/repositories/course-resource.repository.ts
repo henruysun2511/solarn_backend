@@ -6,15 +6,33 @@ import { ResourceType } from '@prisma/client';
 export class CourseResourceRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  create(data: { title: string; fileUrl: string; type: ResourceType }) {
+  create(data: { courseId: string; title: string; fileUrl: string; type: ResourceType }) {
     return this.prisma.courseResource.create({
       data: {
+        courseId: data.courseId,
         title: data.title,
         fileUrl: data.fileUrl,
         type: data.type
       },
       select: {
         resourceId: true,
+        courseId: true,
+        title: true,
+        fileUrl: true,
+        type: true
+      }
+    });
+  }
+
+  findManyByCourseId(courseId: string, type?: ResourceType) {
+    return this.prisma.courseResource.findMany({
+      where: {
+        courseId,
+        ...(type && { type })
+      },
+      select: {
+        resourceId: true,
+        courseId: true,
         title: true,
         fileUrl: true,
         type: true

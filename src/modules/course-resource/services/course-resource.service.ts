@@ -10,9 +10,14 @@ export class CourseResourceService {
 
   create(dto: CreateCourseResourceDto) {
     return this.courseResourceRepo.create({
+      courseId: dto.courseId,
       title: dto.title,
       fileUrl: dto.fileUrl,
       type: dto.type as ResourceType
     });
+  }
+
+  findAllByCourseId(courseId: string, type?: ResourceType) {
+    return this.courseResourceRepo.findManyByCourseId(courseId, type);
   }
 }
