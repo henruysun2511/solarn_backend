@@ -1,13 +1,13 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { ResponseMessage, Public } from 'common/decorators';
-import { SwaggerDoc } from 'common/swagger';
+import { Public, ResponseMessage } from 'common/decorators';
 import { SortOrder } from 'common/enums';
+import { SwaggerDoc } from 'common/swagger';
 
-import { CourseService } from '../services/course.service';
-import { CourseProgressService } from '../services/course-progress.service';
-import { CreateCourseDto, CourseSearchDto, UpdateCourseDto } from '../dtos';
+import { CourseSearchDto, CreateCourseDto, UpdateCourseDto } from '../dtos';
 import { CourseSortBy } from '../enums/course-sort-by.enum';
+import { CourseProgressService } from '../services/course-progress.service';
+import { CourseService } from '../services/course.service';
 
 @Controller('courses')
 @ApiTags('Courses')
@@ -49,6 +49,18 @@ export class CourseController {
   }
 
   @SwaggerDoc({
+    summary: 'Get Course Details',
+    description: 'Retrieve details of a specific course, including totalClasses count.',
+    status: 200
+  })
+  @Public()
+  @Get(':courseId')
+  @ResponseMessage('Lấy chi tiết khóa học thành công')
+  async findOne(@Param('courseId') courseId: string) {
+    return await this.courseService.findOne(courseId);
+  }
+
+  @SwaggerDoc({
     summary: 'Get student progress list by course',
     description: 'Danh sách tiến độ học viên trong khóa học (tính buổi đi học và buổi nghỉ).',
     status: 200
@@ -64,6 +76,7 @@ export class CourseController {
     bodyType: CreateCourseDto,
     status: 201
   })
+  @Public()
   @Post('')
   @ResponseMessage('Thêm thành công')
   async create(@Body() dto: CreateCourseDto) {

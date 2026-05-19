@@ -1,17 +1,24 @@
-import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable } from '@nestjs/common';
 import { TeacherService } from 'modules/teacher/services/teacher.service';
 import { SalaryService } from 'modules/salary/services/salary.service';
 import { StudentService } from 'modules/student/services/student.service';
 import { EnrollmentService } from 'modules/enrollment/services/enrollment.service';
 import { ClassService } from 'modules/class/services/class.service';
 import { ScheduleSessionService } from 'modules/schedule-session/services/schedule-session.service';
+import { AppConfig } from 'common/constants';
+import { IAccountRequest } from 'common/interfaces';
+import { paginate } from 'shared/helpers';
 
 import { RequestRepository } from '../repositories/request.repository';
 import {
   CreateLeaveRequestDto,
   CreateSalaryComplaintDto,
   CreateScheduleChangeDto,
-  CreateTransferRequestDto
+  CreateTransferRequestDto,
+  SalaryComplaintSearchDto,
+  TransferRequestSearchDto,
+  LeaveRequestSearchDto,
+  ScheduleChangeSearchDto
 } from '../dtos';
 
 @Injectable()
@@ -205,5 +212,85 @@ export class RequestService {
       proposedStudyDate,
       reason: dto.reason
     });
+  }
+
+  /**
+   * Lấy danh sách khiếu nại lương
+   */
+  async findAllSalaryComplaints(query: SalaryComplaintSearchDto, user?: IAccountRequest) {
+    if (user) {
+      if (user.roleName === AppConfig.ROLE.STUDENT) {
+        throw new ForbiddenException('Học viên không có quyền truy cập khiếu nại lương');
+      }
+      if (user.roleName === AppConfig.ROLE.TEACHER) {
+        query.senderAccountId = user.accountId;
+      }
+    }
+
+    const [data, total] = await Promise.all([
+      this.requestRepo.findManySalaryComplaints(query),
+      this.requestRepo.countSalaryComplaints(query)
+    ]);
+    return paginate(data, total, query);
+  }
+
+  /**
+   * Lấy danh sách yêu cầu chuyển lớp
+   */
+  async findAllTransferRequests(query: TransferRequestSearchDto, user?: IAccountRequest) {
+    if (user) {
+      if (user.roleName === AppConfig.ROLE.TEACHER) {
+        throw new ForbiddenException('Giáo viên không có quyền truy cập yêu cầu chuyển lớp');
+      }
+      if (user.roleName === AppConfig.ROLE.STUDENT) {
+        query.senderAccountId = user.accountId;
+      }
+    }
+
+    const [data, total] = await Promise.all([
+      this.requestRepo.findManyTransferRequests(query),
+      this.requestRepo.countTransferRequests(query)
+    ]);
+    return paginate(data, total, query);
+  }
+
+  /**
+   * Lấy danh sách yêu cầu bảo lưu
+   */
+  async findAllLeaveRequests(query: LeaveRequestSearchDto, user?: IAccountRequest) {
+    if (user) {
+      if (user.roleName === AppConfig.ROLE.TEACHER) {
+        throw new ForbiddenException('Giáo viên không có quyền truy cập yêu cầu bảo lưu');
+      }
+      if (user.roleName === AppConfig.ROLE.STUDENT) {
+        query.senderAccountId = user.accountId;
+      }
+    }
+
+    const [data, total] = await Promise.all([
+      this.requestRepo.findManyLeaveRequests(query),
+      this.requestRepo.countLeaveRequests(query)
+    ]);
+    return paginate(data, total, query);
+  }
+
+  /**
+   * Lấy danh sách yêu cầu đổi ngày/ca học
+   */
+  async findAllScheduleChanges(query: ScheduleChangeSearchDto, user?: IAccountRequest) {
+    if (user) {
+      if (user.roleName === AppConfig.ROLE.STUDENT) {
+        throw new ForbiddenException('Học viên không có quyền truy cập yêu cầu đổi ca');
+      }
+      if (user.roleName === AppConfig.ROLE.TEACHER) {
+        query.senderAccountId = user.accountId;
+      }
+    }
+
+    const [data, total] = await Promise.all([
+      this.requestRepo.findManyScheduleChanges(query),
+      this.requestRepo.countScheduleChanges(query)
+    ]);
+    return paginate(data, total, query);
   }
 }

@@ -154,11 +154,15 @@ model Branch {
 
 model CourseResource {
   resourceId String       @id @default(uuid()) @map("resource_id")
+  courseId   String       @map("course_id")
   title      String       @map("title") @db.VarChar(255)
   fileUrl    String       @map("file_url") @db.Text
   type       ResourceType @map("type")
 
+  course     Course       @relation(fields: [courseId], references: [courseId], onDelete: Cascade)
+
   @@index([type])
+  @@index([courseId])
   @@map("course_resources")
 }
 
@@ -186,6 +190,7 @@ model Course {
 
   classes            Class[]
   teacherSpecialties TeacherSpecialty[]
+  resources          CourseResource[]
 
   @@map("courses")
 }

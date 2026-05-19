@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { ClassSessionStatus, Prisma } from '@prisma/client';
 import { PrismaService } from 'prisma/prisma.service';
 
+import { ClassSearchByCourseDto } from '../dtos/class-search-by-course.dto';
+
 interface CreateClassData {
   classData: {
     startDate: Date;
@@ -162,6 +164,54 @@ export class ClassRepository {
       });
 
       return createdClass;
+    });
+  }
+
+  async findManyByCourseId(courseId: string, query: ClassSearchByCourseDto) {
+    const { skip, limit, sortBy, sortOrder } = query;
+
+    return this.prisma.class.findMany({
+      where: { courseId },
+      orderBy: { [sortBy]: sortOrder },
+      skip,
+      take: limit,
+      select: {
+        classId: true,
+        maxStudents: true,
+        startDate: true,
+        roomCode: true,
+        _count: {
+          select: {
+            enrollments: true
+          }
+        },
+        scheduleTemplate: {
+          select: {
+            templateId: true,
+            templateName: true,
+            weekdays: true,
+            shiftCode: true
+          }
+        },
+        teacher: {
+          select: {
+            teacherId: true,
+            teacherCode: true,
+            profile: {
+              select: {
+                fullName: true,
+                avatarUrl: true
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  async countByCourseId(courseId: string): Promise<number> {
+    return this.prisma.class.count({
+      where: { courseId }
     });
   }
 }
