@@ -1,10 +1,10 @@
-import { Body, Controller, Param, Post, Get, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import { ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { Public, ResponseMessage } from 'common/decorators';
 import { SwaggerDoc } from 'common/swagger';
-import { ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 
+import { AddStudentToClassDto, ClassSearchByCourseDto, CreateClassDto } from '../dtos';
 import { ClassService } from '../services/class.service';
-import { AddStudentToClassDto, CreateClassDto, ClassSearchByCourseDto } from '../dtos';
 
 @Controller('classes')
 @ApiBearerAuth()
@@ -41,6 +41,7 @@ export class ClassController {
   })
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
+  @ApiQuery({ name: 'search', required: false, type: String, description: 'Tìm kiếm theo classId' })
   @Public()
   @Get('course/:courseId')
   @ResponseMessage('Lấy danh sách lớp học thành công')

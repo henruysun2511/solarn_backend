@@ -167,11 +167,28 @@ export class ClassRepository {
     });
   }
 
+  private buildWhere(courseId: string, query: ClassSearchByCourseDto): Prisma.ClassWhereInput {
+    const { search } = query;
+
+    return {
+      courseId,
+      ...(search && {
+        classId: this.isValidUuid(search.trim()) ? search.trim() : undefined
+      })
+    };
+  }
+
+  private isValidUuid(value: string): boolean {
+    const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+    return uuidRegex.test(value);
+  }
+
   async findManyByCourseId(courseId: string, query: ClassSearchByCourseDto) {
     const { skip, limit, sortBy, sortOrder } = query;
+    const where = this.buildWhere(courseId, query);
 
     return this.prisma.class.findMany({
-      where: { courseId },
+      where,
       orderBy: { [sortBy]: sortOrder },
       skip,
       take: limit,
@@ -209,9 +226,9 @@ export class ClassRepository {
     });
   }
 
-  async countByCourseId(courseId: string): Promise<number> {
+  async countByCourseId(courseId: string, query: ClassSearchByCourseDto): Promise<number> {
     return this.prisma.class.count({
-      where: { courseId }
+      where: this.buildWhere(courseId, query)
     });
   }
 }

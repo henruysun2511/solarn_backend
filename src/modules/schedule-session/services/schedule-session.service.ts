@@ -1,8 +1,8 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { ClassSessionStatus } from '@prisma/client';
 
-import { ScheduleSessionRepository } from '../repositories/schedule-session.repository';
 import { SCHEDULE_SESSION_ERRORS } from '../constants/schedule-session-errors.constant';
+import { ScheduleSessionRepository } from '../repositories/schedule-session.repository';
 
 @Injectable()
 export class ScheduleSessionService {

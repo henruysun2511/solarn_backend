@@ -1,13 +1,12 @@
 import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
-import { EnrollmentStatus } from '@prisma/client';
+import { EnrollmentStatus, Prisma } from '@prisma/client';
 import { CourseService } from 'modules/course/services/course.service';
 import { EnrollmentService } from 'modules/enrollment/services/enrollment.service';
 import { ScheduleSessionService } from 'modules/schedule-session/services/schedule-session.service';
 import { ScheduleTemplateService } from 'modules/schedule-template/services/schedule-template.service';
 import { paginate } from 'shared/helpers';
 
-import { CreateClassDto, ClassSearchByCourseDto } from '../dtos';
+import { ClassSearchByCourseDto, CreateClassDto } from '../dtos';
 import { ClassRepository } from '../repositories/class.repository';
 import { generateScheduleSessions, normalizeDate, parseWeekdays } from '../utils';
 
@@ -138,7 +137,7 @@ export class ClassService {
   async findAllByCourseId(courseId: string, query: ClassSearchByCourseDto) {
     const [classes, total] = await Promise.all([
       this.classRepo.findManyByCourseId(courseId, query),
-      this.classRepo.countByCourseId(courseId)
+      this.classRepo.countByCourseId(courseId, query)
     ]);
 
     const data = classes.map((c) => {

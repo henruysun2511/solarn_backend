@@ -39,4 +39,10 @@ export class CourseResourceRepository {
       }
     });
   }
+
+  async delete(resourceId: string) {
+    return this.prisma.courseResource.delete({
+      where: { resourceId }
+    });
+  }
 }
