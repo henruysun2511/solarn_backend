@@ -163,13 +163,26 @@ export class RequestController {
 
   @SwaggerDoc({
     summary: 'Lấy danh sách request theo lớp',
+    description:
+      'Retrieve all requests related to a class (transfer, leave, schedule change) with pagination and sorting.',
     status: 200
   })
-  @ApiQuery({ name: 'page', required: false, type: Number })
-  @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiQuery({ name: 'search', required: false, type: String })
-  @ApiQuery({ name: 'sortOrder', required: false, enum: SortOrder })
-  @ApiQuery({ name: 'sortBy', required: false, enum: Object.values(RequestClassSortBy) })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
+  @ApiQuery({ name: 'search', required: false, type: String, description: 'Search by reason or sender name' })
+  @ApiQuery({
+    name: 'sortOrder',
+    required: false,
+    enum: SortOrder,
+    description: 'Sort order (desc or asc).',
+    example: SortOrder.DESC
+  })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    enum: Object.values(RequestClassSortBy),
+    description: 'Sort field for requests.'
+  })
   @Get('class/:classId')
   @ResponseMessage('Lấy danh sách request theo lớp thành công')
   async findAllByClassId(@Param('classId') classId: string, @Query() query: RequestClassSearchDto) {

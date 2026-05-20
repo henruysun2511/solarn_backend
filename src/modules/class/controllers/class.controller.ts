@@ -1,9 +1,11 @@
 import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { Public, ResponseMessage } from 'common/decorators';
+import { SortOrder } from 'common/enums';
 import { SwaggerDoc } from 'common/swagger';
 
 import { AddStudentToClassDto, ClassSearchByCourseDto, CreateClassDto } from '../dtos';
+import { ClassSortBy } from '../enums/class-sort-by.enum';
 import { ClassService } from '../services/class.service';
 
 @Controller('classes')
@@ -42,6 +44,19 @@ export class ClassController {
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
   @ApiQuery({ name: 'search', required: false, type: String, description: 'Tìm kiếm theo classId' })
+  @ApiQuery({
+    name: 'sortOrder',
+    required: false,
+    enum: SortOrder,
+    description: 'Sort order (desc or asc).',
+    example: SortOrder.DESC
+  })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    enum: Object.values(ClassSortBy),
+    description: 'Sort field for classes.'
+  })
   @Public()
   @Get('course/:courseId')
   @ResponseMessage('Lấy danh sách lớp học thành công')

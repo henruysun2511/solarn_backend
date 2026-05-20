@@ -3,6 +3,7 @@ import { paginate } from 'shared/helpers';
 
 import { StudentRepository } from '../repositories/student.repository';
 import { StudentClassSearchDto } from '../dtos/student-class-search.dto';
+import { StudentSearchDto } from '../dtos/student-search.dto';
 
 @Injectable()
 export class StudentService {
@@ -26,6 +27,12 @@ export class StudentService {
       this.studentRepo.findManyByClassId(classId, query),
       this.studentRepo.countByClassIdQuery(classId, query)
     ]);
+    return paginate(data, total, query);
+  }
+
+  async findAll(query: StudentSearchDto) {
+    const [data, total] = await Promise.all([this.studentRepo.findMany(query), this.studentRepo.countAllQuery(query)]);
+
     return paginate(data, total, query);
   }
 }

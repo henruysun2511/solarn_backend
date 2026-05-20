@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from 'prisma/prisma.service';
 
 import { FeedbackClassSearchDto } from '../dtos/feedback-class-search.dto';
@@ -26,10 +27,18 @@ export class FeedbackRepository {
     });
   }
 
+  private buildWhere(classId: string, query: FeedbackClassSearchDto): Prisma.FeedbackWhereInput {
+    const { search } = query;
+    return {
+      classId,
+      ...(search && { content: { contains: search, mode: 'insensitive' } })
+    };
+  }
+
   async findManyByClassId(classId: string, query: FeedbackClassSearchDto) {
     const { skip, limit, sortBy, sortOrder } = query;
     return this.prisma.feedback.findMany({
-      where: { classId },
+      where: this.buildWhere(classId, query),
       skip,
       take: limit,
       orderBy: { [sortBy]: sortOrder },
@@ -37,7 +46,9 @@ export class FeedbackRepository {
     });
   }
 
-  async countByClassIdQuery(classId: string, query: FeedbackClassSearchDto) {
-    return this.prisma.feedback.count({ where: { classId } });
+  async countByClassIdQuery(classId: string, query: FeedbackClassSearchDto): Promise<number> {
+    return this.prisma.feedback.count({
+      where: this.buildWhere(classId, query)
+    });
   }
 }
