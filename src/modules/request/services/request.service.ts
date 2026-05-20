@@ -1,4 +1,5 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable } from '@nestjs/common';
+import { RequestStatus } from '@prisma/client';
 import { TeacherService } from 'modules/teacher/services/teacher.service';
 import { SalaryService } from 'modules/salary/services/salary.service';
 import { StudentService } from 'modules/student/services/student.service';
@@ -11,6 +12,7 @@ import { paginate } from 'shared/helpers';
 
 import { RequestRepository } from '../repositories/request.repository';
 import {
+  ApproveRequestDto,
   CreateLeaveRequestDto,
   CreateSalaryComplaintDto,
   CreateScheduleChangeDto,
@@ -292,5 +294,25 @@ export class RequestService {
       this.requestRepo.countScheduleChanges(query)
     ]);
     return paginate(data, total, query);
+  }
+
+  /**
+   * Phê duyệt request (ADMIN)
+   */
+  async approveRequest(requestId: string, approver: IAccountRequest, dto: ApproveRequestDto) {
+    const request = await this.requestRepo.findById(requestId);
+    if (!request) {
+      throw new BadRequestException('Yêu cầu không tồn tại');
+    }
+
+    if (request.status !== RequestStatus.PENDING) {
+      throw new ConflictException('Yêu cầu đã được xử lý');
+    }
+
+    return this.requestRepo.approveRequest({
+      requestId,
+      approverAccountId: approver.accountId,
+      approvalNote: dto.approvalNote
+    });
   }
 }

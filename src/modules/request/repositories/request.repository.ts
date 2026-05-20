@@ -13,6 +13,43 @@ import {
 export class RequestRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  findById(requestId: string) {
+    return this.prisma.request.findUnique({
+      where: { requestId },
+      select: {
+        requestId: true,
+        type: true,
+        status: true,
+        senderAccountId: true,
+        approverAccountId: true,
+        approvalNote: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    });
+  }
+
+  approveRequest(data: { requestId: string; approverAccountId: string; approvalNote?: string }) {
+    return this.prisma.request.update({
+      where: { requestId: data.requestId },
+      data: {
+        status: RequestStatus.APPROVED,
+        approverAccountId: data.approverAccountId,
+        approvalNote: data.approvalNote
+      },
+      select: {
+        requestId: true,
+        type: true,
+        status: true,
+        senderAccountId: true,
+        approverAccountId: true,
+        approvalNote: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    });
+  }
+
   createSalaryComplaint(data: { senderAccountId: string; salaryId: string; proposedAmount: number; reason: string }) {
     return this.prisma.request.create({
       data: {
