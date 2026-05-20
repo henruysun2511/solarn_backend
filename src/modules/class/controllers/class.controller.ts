@@ -48,4 +48,16 @@ export class ClassController {
   async findAllByCourseId(@Param('courseId') courseId: string, @Query() query: ClassSearchByCourseDto) {
     return this.classService.findAllByCourseId(courseId, query);
   }
+
+  @SwaggerDoc({
+    summary: 'Get Class Detail',
+    description: 'Retrieve detailed information of a class by classId, including attendance statistics.',
+    status: 200
+  })
+  @Public()
+  @Get(':classId')
+  @ResponseMessage('Lấy chi tiết lớp học thành công')
+  async getClassDetail(@Param('classId') classId: string) {
+    return this.classService.getClassDetail(classId);
+  }
 }

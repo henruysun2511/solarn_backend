@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { RequestStatus } from '@prisma/client';
 import { Public, ResponseMessage, User } from 'common/decorators';
@@ -20,8 +20,10 @@ import {
   LeaveRequestSortBy,
   SalaryComplaintSortBy,
   ScheduleChangeSortBy,
-  TransferRequestSortBy
+  TransferRequestSortBy,
+  RequestClassSortBy
 } from '../enums/request-sort-by.enum';
+import { RequestClassSearchDto } from '../dtos/request-class-search.dto';
 import { RequestService } from '../services/request.service';
 
 @ApiTags('Requests')
@@ -157,5 +159,20 @@ export class RequestController {
   async createScheduleChangeRequest(@User() user: IAccountRequest, @Body() dto: CreateScheduleChangeDto) {
     const accountId = user.accountId;
     return this.requestService.createScheduleChangeRequest(accountId, dto);
+  }
+
+  @SwaggerDoc({
+    summary: 'Lấy danh sách request theo lớp',
+    status: 200
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'sortOrder', required: false, enum: SortOrder })
+  @ApiQuery({ name: 'sortBy', required: false, enum: Object.values(RequestClassSortBy) })
+  @Get('class/:classId')
+  @ResponseMessage('Lấy danh sách request theo lớp thành công')
+  async findAllByClassId(@Param('classId') classId: string, @Query() query: RequestClassSearchDto) {
+    return this.requestService.findAllByClassId(classId, query);
   }
 }

@@ -1,8 +1,10 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { StudentService } from 'modules/student/services/student.service';
+import { paginate } from 'shared/helpers';
 
 import { FeedbackRepository } from '../repositories/feedback.repository';
 import { CreateFeedbackDto } from '../dtos/create-feedback.dto';
+import { FeedbackClassSearchDto } from '../dtos/feedback-class-search.dto';
 
 @Injectable()
 export class FeedbackService {
@@ -21,5 +23,13 @@ export class FeedbackService {
       teacherId: dto.teacherId,
       content: dto.content
     });
+  }
+
+  async findAllByClassId(classId: string, query: FeedbackClassSearchDto) {
+    const [data, total] = await Promise.all([
+      this.feedbackRepo.findManyByClassId(classId, query),
+      this.feedbackRepo.countByClassIdQuery(classId, query)
+    ]);
+    return paginate(data, total, query);
   }
 }

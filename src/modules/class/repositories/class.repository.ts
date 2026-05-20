@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { ClassSessionStatus, Prisma } from '@prisma/client';
+import { AttendanceStatus, ClassSessionStatus, Prisma } from '@prisma/client';
 import { PrismaService } from 'prisma/prisma.service';
 
 import { ClassSearchByCourseDto } from '../dtos/class-search-by-course.dto';
@@ -38,6 +38,85 @@ export class ClassRepository {
       where: { classId },
       select: { classId: true, startDate: true, maxStudents: true, courseId: true }
     });
+  }
+
+  findClassDetail(classId: string) {
+    return this.prisma.class.findUnique({
+      where: { classId },
+      select: {
+        classId: true,
+        maxStudents: true,
+        startDate: true,
+        roomCode: true,
+        _count: {
+          select: { enrollments: true }
+        },
+        scheduleTemplate: {
+          select: {
+            templateId: true,
+            templateName: true,
+            weekdays: true,
+            shiftCode: true
+          }
+        },
+        teacher: {
+          select: {
+            teacherId: true,
+            teacherCode: true,
+            profile: {
+              select: {
+                fullName: true,
+                avatarUrl: true
+              }
+            }
+          }
+        },
+        course: {
+          select: {
+            courseId: true,
+            courseName: true,
+            tuitionFee: true,
+            totalSessions: true
+          }
+        },
+        room: {
+          select: {
+            roomCode: true,
+            capacity: true
+          }
+        }
+      }
+    });
+  }
+
+  async getAttendanceStats(classId: string) {
+    const attendances = await this.prisma.attendance.groupBy({
+      by: ['status'],
+      where: { session: { classId, status: ClassSessionStatus.ENDED } },
+      _count: { _all: true }
+    });
+
+    let attended = 0;
+    let absent = 0;
+    for (const record of attendances) {
+      if (record.status === AttendanceStatus.ABSENT) {
+        absent += record._count._all;
+      } else {
+        attended += record._count._all;
+      }
+    }
+
+    const totalAttendance = attended + absent;
+    const averageAttendanceRate = totalAttendance === 0 ? 0 : Math.round((attended / totalAttendance) * 10000) / 100;
+
+    const endedSessions = await this.prisma.scheduleSession.count({
+      where: { classId, status: ClassSessionStatus.ENDED }
+    });
+
+    return {
+      endedSessions,
+      averageAttendanceRate
+    };
   }
 
   async getClassMeta(classId: string): Promise<{

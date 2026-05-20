@@ -134,6 +134,22 @@ export class ClassService {
     return tuitionFee;
   }
 
+  async getClassDetail(classId: string) {
+    const classDetail = await this.classRepo.findClassDetail(classId);
+    if (!classDetail) {
+      throw new BadRequestException('Lớp không tồn tại');
+    }
+
+    const { _count, ...rest } = classDetail;
+    const attendanceStats = await this.classRepo.getAttendanceStats(classId);
+
+    return {
+      ...rest,
+      registeredStudents: _count.enrollments,
+      ...attendanceStats
+    };
+  }
+
   async findAllByCourseId(courseId: string, query: ClassSearchByCourseDto) {
     const [classes, total] = await Promise.all([
       this.classRepo.findManyByCourseId(courseId, query),

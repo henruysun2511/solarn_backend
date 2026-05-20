@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'prisma/prisma.service';
 
+import { FeedbackClassSearchDto } from '../dtos/feedback-class-search.dto';
+
 @Injectable()
 export class FeedbackRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -22,5 +24,20 @@ export class FeedbackRepository {
         createdAt: true
       }
     });
+  }
+
+  async findManyByClassId(classId: string, query: FeedbackClassSearchDto) {
+    const { skip, limit, sortBy, sortOrder } = query;
+    return this.prisma.feedback.findMany({
+      where: { classId },
+      skip,
+      take: limit,
+      orderBy: { [sortBy]: sortOrder },
+      include: { student: { include: { profile: true } } }
+    });
+  }
+
+  async countByClassIdQuery(classId: string, query: FeedbackClassSearchDto) {
+    return this.prisma.feedback.count({ where: { classId } });
   }
 }

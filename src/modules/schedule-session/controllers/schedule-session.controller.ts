@@ -1,10 +1,14 @@
 import { Body, Controller, Param, Patch } from '@nestjs/common';
 import { ResponseMessage } from 'common/decorators';
 import { SwaggerDoc } from 'common/swagger';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { SortOrder } from 'common/enums';
+import { Query, Get } from '@nestjs/common';
 
 import { ScheduleSessionService } from '../services/schedule-session.service';
 import { UpdateSessionStatusDto } from '../dtos';
+import { ScheduleSessionClassSearchDto } from '../dtos/schedule-session-class-search.dto';
+import { ScheduleSessionSortBy } from '../enums/schedule-session-sort-by.enum';
 
 @Controller('schedule-session')
 @ApiBearerAuth()
@@ -21,5 +25,21 @@ export class ScheduleSessionController {
   @ResponseMessage('Cập nhật trạng thái buổi học thành công')
   updateStatus(@Param('sessionId') sessionId: string, @Body() dto: UpdateSessionStatusDto) {
     return this.scheduleSessionService.updateStatus(sessionId, dto.status);
+  }
+
+  @SwaggerDoc({
+    summary: 'Lấy danh sách buổi học theo classId',
+    status: 200
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'studyDate', required: false, type: String })
+  @ApiQuery({ name: 'sortOrder', required: false, enum: SortOrder })
+  @ApiQuery({ name: 'sortBy', required: false, enum: Object.values(ScheduleSessionSortBy) })
+  @Get('class/:classId')
+  @ResponseMessage('Lấy danh sách buổi học thành công')
+  findAllByClassId(@Param('classId') classId: string, @Query() query: ScheduleSessionClassSearchDto) {
+    return this.scheduleSessionService.findAllByClassId(classId, query);
   }
 }

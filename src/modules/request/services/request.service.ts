@@ -20,6 +20,7 @@ import {
   LeaveRequestSearchDto,
   ScheduleChangeSearchDto
 } from '../dtos';
+import { RequestClassSearchDto } from '../dtos/request-class-search.dto';
 
 @Injectable()
 export class RequestService {
@@ -290,6 +291,14 @@ export class RequestService {
     const [data, total] = await Promise.all([
       this.requestRepo.findManyScheduleChanges(query),
       this.requestRepo.countScheduleChanges(query)
+    ]);
+    return paginate(data, total, query);
+  }
+
+  async findAllByClassId(classId: string, query: RequestClassSearchDto) {
+    const [data, total] = await Promise.all([
+      this.requestRepo.findManyByClassId(classId, query),
+      this.requestRepo.countByClassIdQuery(classId, query)
     ]);
     return paginate(data, total, query);
   }
