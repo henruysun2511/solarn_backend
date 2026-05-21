@@ -13,6 +13,9 @@ import {
   CreateScheduleChangeDto,
   CreateTransferRequestDto,
   LeaveRequestSearchDto,
+  ProcessSalaryComplaintDto,
+  ProcessScheduleChangeDto,
+  ProcessTransferRequestDto,
   SalaryComplaintSearchDto,
   ScheduleChangeSearchDto,
   TransferRequestSearchDto
@@ -174,5 +177,56 @@ export class RequestController {
     @Body() dto: ApproveRequestDto
   ) {
     return this.requestService.approveRequest(requestId, user, dto);
+  }
+
+  @SwaggerDoc({
+    summary: 'Xử lý yêu cầu đổi lịch/ca học',
+    description:
+      'ADMIN xử lý request đổi lịch. Nếu thành công sẽ cập nhật ScheduleSession theo đề xuất và approve request trong cùng 1 transaction.',
+    bodyType: ProcessScheduleChangeDto,
+    status: 200
+  })
+  @Patch('schedule-change/:requestId/process')
+  @ResponseMessage('Xử lý yêu cầu đổi lịch thành công')
+  async processScheduleChange(
+    @Param('requestId') requestId: string,
+    @User() user: IAccountRequest,
+    @Body() dto: ProcessScheduleChangeDto
+  ) {
+    return this.requestService.processScheduleChange(requestId, user, dto);
+  }
+
+  @SwaggerDoc({
+    summary: 'Xử lý yêu cầu chuyển lớp',
+    description:
+      'ADMIN xử lý request chuyển lớp. Nếu duyệt sẽ drop enrollment lớp nguồn và tạo enrollment lớp đích trong cùng 1 transaction.',
+    bodyType: ProcessTransferRequestDto,
+    status: 200
+  })
+  @Patch('transfer/:requestId/process')
+  @ResponseMessage('Xử lý yêu cầu chuyển lớp thành công')
+  async processTransferRequest(
+    @Param('requestId') requestId: string,
+    @User() user: IAccountRequest,
+    @Body() dto: ProcessTransferRequestDto
+  ) {
+    return this.requestService.processTransferRequest(requestId, user, dto);
+  }
+
+  @SwaggerDoc({
+    summary: 'Xử lý khiếu nại lương',
+    description:
+      'ADMIN xử lý khiếu nại lương. Nếu chấp nhận sẽ cập nhật Salary.totalAmount theo proposedAmount và update request trong cùng 1 transaction.',
+    bodyType: ProcessSalaryComplaintDto,
+    status: 200
+  })
+  @Patch('salary-complaint/:requestId/process')
+  @ResponseMessage('Xử lý khiếu nại lương thành công')
+  async processSalaryComplaint(
+    @Param('requestId') requestId: string,
+    @User() user: IAccountRequest,
+    @Body() dto: ProcessSalaryComplaintDto
+  ) {
+    return this.requestService.processSalaryComplaint(requestId, user, dto);
   }
 }
