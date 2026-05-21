@@ -46,10 +46,9 @@ export class RequestController {
   @ApiQuery({ name: 'salaryId', required: false, type: String })
   @ApiQuery({ name: 'sortOrder', required: false, enum: SortOrder })
   @ApiQuery({ name: 'sortBy', required: false, enum: Object.values(SalaryComplaintSortBy) })
-  @Public()
   @Get('salary-complaint')
   @ResponseMessage('Lấy danh sách khiếu nại lương thành công')
-  async findAllSalaryComplaints(@Query() query: SalaryComplaintSearchDto, @User() user?: IAccountRequest) {
+  async findAllSalaryComplaints(@Query() query: SalaryComplaintSearchDto, @User() user: IAccountRequest) {
     return this.requestService.findAllSalaryComplaints(query, user);
   }
 
@@ -112,6 +111,70 @@ export class RequestController {
   @ResponseMessage('Lấy danh sách yêu cầu đổi ca thành công')
   async findAllScheduleChanges(@Query() query: ScheduleChangeSearchDto, @User() user?: IAccountRequest) {
     return this.requestService.findAllScheduleChanges(query, user);
+  }
+
+  @SwaggerDoc({
+    summary: 'Lấy danh sách khiếu nại lương của tôi',
+    description: 'Returns salary complaints for the current authenticated user.',
+    status: 200
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'status', required: false, enum: RequestStatus })
+  @ApiQuery({ name: 'sortOrder', required: false, enum: SortOrder })
+  @ApiQuery({ name: 'sortBy', required: false, enum: Object.values(SalaryComplaintSortBy) })
+  @Get('my-salary-complaints')
+  @ResponseMessage('Lấy danh sách khiếu nại lương của tôi thành công')
+  async findMySalaryComplaints(@Query() query: SalaryComplaintSearchDto, @User() user: IAccountRequest) {
+    return this.requestService.findMySalaryComplaints(user.accountId, query);
+  }
+
+  @SwaggerDoc({
+    summary: 'Lấy danh sách yêu cầu bảo lưu của tôi',
+    description: 'Returns leave requests for the current authenticated user.',
+    status: 200
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'status', required: false, enum: RequestStatus })
+  @ApiQuery({ name: 'sortOrder', required: false, enum: SortOrder })
+  @ApiQuery({ name: 'sortBy', required: false, enum: Object.values(LeaveRequestSortBy) })
+  @Get('my-leave-requests')
+  @ResponseMessage('Lấy danh sách yêu cầu bảo lưu của tôi thành công')
+  async findMyLeaveRequests(@Query() query: LeaveRequestSearchDto, @User() user: IAccountRequest) {
+    return this.requestService.findMyLeaveRequests(user.accountId, query);
+  }
+
+  @SwaggerDoc({
+    summary: 'Lấy danh sách yêu cầu đổi lịch của tôi',
+    description: 'Returns schedule change requests for the current authenticated user.',
+    status: 200
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'status', required: false, enum: RequestStatus })
+  @ApiQuery({ name: 'sortOrder', required: false, enum: SortOrder })
+  @ApiQuery({ name: 'sortBy', required: false, enum: Object.values(ScheduleChangeSortBy) })
+  @Get('my-schedule-changes')
+  @ResponseMessage('Lấy danh sách yêu cầu đổi lịch của tôi thành công')
+  async findMyScheduleChanges(@Query() query: ScheduleChangeSearchDto, @User() user: IAccountRequest) {
+    return this.requestService.findMyScheduleChanges(user.accountId, query);
+  }
+
+  @SwaggerDoc({
+    summary: 'Lấy danh sách yêu cầu chuyển lớp của tôi',
+    description: 'Returns transfer requests for the current authenticated user.',
+    status: 200
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'status', required: false, enum: RequestStatus })
+  @ApiQuery({ name: 'sortOrder', required: false, enum: SortOrder })
+  @ApiQuery({ name: 'sortBy', required: false, enum: Object.values(TransferRequestSortBy) })
+  @Get('my-transfer-requests')
+  @ResponseMessage('Lấy danh sách yêu cầu chuyển lớp của tôi thành công')
+  async findMyTransferRequests(@Query() query: TransferRequestSearchDto, @User() user: IAccountRequest) {
+    return this.requestService.findMyTransferRequests(user.accountId, query);
   }
 
   @SwaggerDoc({

@@ -297,6 +297,42 @@ export class RequestService {
     return paginate(data, total, query);
   }
 
+  async findMySalaryComplaints(accountId: string, query: SalaryComplaintSearchDto) {
+    query.senderAccountId = accountId;
+    const [data, total] = await Promise.all([
+      this.requestRepo.findManySalaryComplaints(query),
+      this.requestRepo.countSalaryComplaints(query)
+    ]);
+    return paginate(data, total, query);
+  }
+
+  async findMyLeaveRequests(accountId: string, query: LeaveRequestSearchDto) {
+    query.senderAccountId = accountId;
+    const [data, total] = await Promise.all([
+      this.requestRepo.findManyLeaveRequests(query),
+      this.requestRepo.countLeaveRequests(query)
+    ]);
+    return paginate(data, total, query);
+  }
+
+  async findMyScheduleChanges(accountId: string, query: ScheduleChangeSearchDto) {
+    query.senderAccountId = accountId;
+    const [data, total] = await Promise.all([
+      this.requestRepo.findManyScheduleChanges(query),
+      this.requestRepo.countScheduleChanges(query)
+    ]);
+    return paginate(data, total, query);
+  }
+
+  async findMyTransferRequests(accountId: string, query: TransferRequestSearchDto) {
+    query.senderAccountId = accountId;
+    const [data, total] = await Promise.all([
+      this.requestRepo.findManyTransferRequests(query),
+      this.requestRepo.countTransferRequests(query)
+    ]);
+    return paginate(data, total, query);
+  }
+
   async findAllByClassId(classId: string, query: RequestClassSearchDto) {
     const [data, total] = await Promise.all([
       this.requestRepo.findManyByClassId(classId, query),

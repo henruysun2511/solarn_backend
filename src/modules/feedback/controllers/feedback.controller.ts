@@ -49,4 +49,31 @@ export class FeedbackController {
   async findAllByClassId(@Param('classId') classId: string, @Query() query: FeedbackClassSearchDto) {
     return this.feedbackService.findAllByClassId(classId, query);
   }
+
+  @SwaggerDoc({
+    summary: 'Lấy danh sách feedback của tôi',
+    description: 'Retrieve feedbacks for the authenticated teacher with pagination and sorting.',
+    status: 200
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
+  @ApiQuery({ name: 'search', required: false, type: String, description: 'Search by feedback content' })
+  @ApiQuery({
+    name: 'sortOrder',
+    required: false,
+    enum: SortOrder,
+    description: 'Sort order (desc or asc).',
+    example: SortOrder.DESC
+  })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    enum: Object.values(FeedbackClassSortBy),
+    description: 'Sort field for feedbacks.'
+  })
+  @Get('teacher/my-feedbacks')
+  @ResponseMessage('Lấy danh sách feedback thành công')
+  async findMyFeedbacks(@User() user: IAccountRequest, @Query() query: FeedbackClassSearchDto) {
+    return this.feedbackService.findMyFeedbacks(user, query);
+  }
 }

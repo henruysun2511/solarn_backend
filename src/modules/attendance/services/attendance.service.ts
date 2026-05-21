@@ -67,4 +67,8 @@ export class AttendanceService {
   findEndedAttendancesForProgress(studentIds: string[], classIds: string[]) {
     return this.attendanceRepo.findEndedAttendancesForProgress(studentIds, classIds);
   }
+
+  findBySessionId(sessionId: string) {
+    return this.attendanceRepo.findBySessionId(sessionId);
+  }
 }

@@ -1,6 +1,6 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
-import { ResponseMessage } from 'common/decorators';
+import { Public, ResponseMessage } from 'common/decorators';
 import { SortOrder } from 'common/enums';
 import { SwaggerDoc } from 'common/swagger';
 
@@ -35,6 +35,7 @@ export class StudentController {
     enum: Object.values(StudentSortBy),
     description: 'Sort field for students.'
   })
+  @Public()
   @Get()
   @ResponseMessage('Lấy danh sách học sinh thành công')
   findAll(@Query() query: StudentSearchDto) {

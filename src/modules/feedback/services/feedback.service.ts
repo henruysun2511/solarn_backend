@@ -1,5 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
+import { IAccountRequest } from 'common/interfaces';
 import { StudentService } from 'modules/student/services/student.service';
+import { TeacherService } from 'modules/teacher/services/teacher.service';
 import { paginate } from 'shared/helpers';
 
 import { FeedbackRepository } from '../repositories/feedback.repository';
@@ -10,7 +12,8 @@ import { FeedbackClassSearchDto } from '../dtos/feedback-class-search.dto';
 export class FeedbackService {
   constructor(
     private readonly feedbackRepo: FeedbackRepository,
-    private readonly studentService: StudentService
+    private readonly studentService: StudentService,
+    private readonly teacherService: TeacherService
   ) {}
 
   async create(accountId: string, dto: CreateFeedbackDto) {
@@ -21,7 +24,8 @@ export class FeedbackService {
       studentId: student.studentId,
       classId: dto.classId,
       teacherId: dto.teacherId,
-      content: dto.content
+      content: dto.content,
+      starRating: dto.starRating
     });
   }
 
@@ -29,6 +33,19 @@ export class FeedbackService {
     const [data, total] = await Promise.all([
       this.feedbackRepo.findManyByClassId(classId, query),
       this.feedbackRepo.countByClassIdQuery(classId, query)
+    ]);
+    return paginate(data, total, query);
+  }
+
+  async findMyFeedbacks(user: IAccountRequest, query: FeedbackClassSearchDto) {
+    const teacher = await this.teacherService.findTeacherByAccountId(user.accountId);
+    if (!teacher) {
+      throw new BadRequestException('Giáo viên không tồn tại');
+    }
+
+    const [data, total] = await Promise.all([
+      this.feedbackRepo.findManyByTeacherId(teacher.teacherId, query),
+      this.feedbackRepo.countByTeacherId(teacher.teacherId, query)
     ]);
     return paginate(data, total, query);
   }

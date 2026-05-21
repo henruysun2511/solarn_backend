@@ -1,10 +1,11 @@
 import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
-import { Public, ResponseMessage } from 'common/decorators';
+import { Public, User, ResponseMessage } from 'common/decorators';
 import { SortOrder } from 'common/enums';
+import { IAccountRequest } from 'common/interfaces';
 import { SwaggerDoc } from 'common/swagger';
 
-import { AddStudentToClassDto, ClassSearchByCourseDto, CreateClassDto } from '../dtos';
+import { AddStudentToClassDto, ClassSearchByCourseDto, ClassSearchByTeacherDto, CreateClassDto } from '../dtos';
 import { ClassSortBy } from '../enums/class-sort-by.enum';
 import { ClassService } from '../services/class.service';
 
@@ -62,6 +63,33 @@ export class ClassController {
   @ResponseMessage('Lấy danh sách lớp học thành công')
   async findAllByCourseId(@Param('courseId') courseId: string, @Query() query: ClassSearchByCourseDto) {
     return this.classService.findAllByCourseId(courseId, query);
+  }
+
+  @SwaggerDoc({
+    summary: 'Get My Classes (Teacher)',
+    description: 'Retrieve classes assigned to the authenticated teacher, with pagination.',
+    status: 200
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
+  @ApiQuery({ name: 'search', required: false, type: String, description: 'Tìm kiếm theo classId' })
+  @ApiQuery({
+    name: 'sortOrder',
+    required: false,
+    enum: SortOrder,
+    description: 'Sort order (desc or asc).',
+    example: SortOrder.DESC
+  })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    enum: Object.values(ClassSortBy),
+    description: 'Sort field for classes.'
+  })
+  @Get('my-classes')
+  @ResponseMessage('Lấy danh sách lớp của tôi thành công')
+  async findMyClasses(@User() user: IAccountRequest, @Query() query: ClassSearchByTeacherDto) {
+    return this.classService.findMyClasses(user.accountId, query);
   }
 
   @SwaggerDoc({
