@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { RequestStatus } from '@prisma/client';
 import { Public, ResponseMessage, User } from 'common/decorators';
@@ -7,6 +7,7 @@ import { IAccountRequest } from 'common/interfaces';
 import { SwaggerDoc } from 'common/swagger';
 
 import {
+  ApproveRequestDto,
   CreateLeaveRequestDto,
   CreateSalaryComplaintDto,
   CreateScheduleChangeDto,
@@ -187,5 +188,21 @@ export class RequestController {
   @ResponseMessage('Lấy danh sách request theo lớp thành công')
   async findAllByClassId(@Param('classId') classId: string, @Query() query: RequestClassSearchDto) {
     return this.requestService.findAllByClassId(classId, query);
+  }
+
+  @SwaggerDoc({
+    summary: 'Phê duyệt yêu cầu',
+    description: 'ADMIN phê duyệt một request (chỉ khi đang PENDING)',
+    bodyType: ApproveRequestDto,
+    status: 200
+  })
+  @Patch(':requestId/approve')
+  @ResponseMessage('Phê duyệt yêu cầu thành công')
+  async approveRequest(
+    @Param('requestId') requestId: string,
+    @User() user: IAccountRequest,
+    @Body() dto: ApproveRequestDto
+  ) {
+    return this.requestService.approveRequest(requestId, user, dto);
   }
 }

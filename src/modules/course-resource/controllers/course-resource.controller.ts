@@ -34,9 +34,6 @@ export class CourseResourceController {
   @Get()
   @ResponseMessage('Lấy danh sách tài nguyên khóa học thành công')
   async findAllByCourseId(@Query('courseId') courseId: string, @Query('type') type?: ResourceType) {
-    if (!courseId) {
-      throw new BadRequestException('courseId là bắt buộc');
-    }
     return this.courseResourceService.findAllByCourseId(courseId, type);
   }
 

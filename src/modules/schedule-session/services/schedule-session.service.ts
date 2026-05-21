@@ -5,6 +5,7 @@ import { paginate } from 'shared/helpers';
 import { SCHEDULE_SESSION_ERRORS } from '../constants/schedule-session-errors.constant';
 import { ScheduleSessionRepository } from '../repositories/schedule-session.repository';
 import { ScheduleSessionClassSearchDto } from '../dtos/schedule-session-class-search.dto';
+import { ScheduleSessionSearchDto } from '../dtos/schedule-session.search.dto';
 
 @Injectable()
 export class ScheduleSessionService {
@@ -131,6 +132,15 @@ export class ScheduleSessionService {
       this.scheduleSessionRepo.findManyByClassId(classId, query),
       this.scheduleSessionRepo.countByClassIdQuery(classId, query)
     ]);
+    return paginate(data, total, query);
+  }
+
+  async findAll(query: ScheduleSessionSearchDto) {
+    const [data, total] = await Promise.all([
+      this.scheduleSessionRepo.findMany(query),
+      this.scheduleSessionRepo.countQuery(query)
+    ]);
+
     return paginate(data, total, query);
   }
 }

@@ -33,6 +33,11 @@ export class CourseResourceRepository {
       select: {
         resourceId: true,
         courseId: true,
+        course: {
+          select: {
+            courseName: true
+          }
+        },
         title: true,
         fileUrl: true,
         type: true
