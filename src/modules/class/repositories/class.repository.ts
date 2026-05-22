@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { ClassSessionStatus, Prisma } from '@prisma/client';
+import { AttendanceStatus, ClassSessionStatus, Prisma } from '@prisma/client';
 import { PrismaService } from 'prisma/prisma.service';
 
-import { ClassSearchByCourseDto } from '../dtos/class-search-by-course.dto';
+import { ClassSearchByCourseDto, ClassSearchByTeacherDto } from '../dtos';
 
 interface CreateClassData {
   classData: {
@@ -38,6 +38,85 @@ export class ClassRepository {
       where: { classId },
       select: { classId: true, startDate: true, maxStudents: true, courseId: true }
     });
+  }
+
+  findClassDetail(classId: string) {
+    return this.prisma.class.findUnique({
+      where: { classId },
+      select: {
+        classId: true,
+        maxStudents: true,
+        startDate: true,
+        roomCode: true,
+        _count: {
+          select: { enrollments: true }
+        },
+        scheduleTemplate: {
+          select: {
+            templateId: true,
+            templateName: true,
+            weekdays: true,
+            shiftCode: true
+          }
+        },
+        teacher: {
+          select: {
+            teacherId: true,
+            teacherCode: true,
+            profile: {
+              select: {
+                fullName: true,
+                avatarUrl: true
+              }
+            }
+          }
+        },
+        course: {
+          select: {
+            courseId: true,
+            courseName: true,
+            tuitionFee: true,
+            totalSessions: true
+          }
+        },
+        room: {
+          select: {
+            roomCode: true,
+            capacity: true
+          }
+        }
+      }
+    });
+  }
+
+  async getAttendanceStats(classId: string) {
+    const attendances = await this.prisma.attendance.groupBy({
+      by: ['status'],
+      where: { session: { classId, status: ClassSessionStatus.ENDED } },
+      _count: { _all: true }
+    });
+
+    let attended = 0;
+    let absent = 0;
+    for (const record of attendances) {
+      if (record.status === AttendanceStatus.ABSENT) {
+        absent += record._count._all;
+      } else {
+        attended += record._count._all;
+      }
+    }
+
+    const totalAttendance = attended + absent;
+    const averageAttendanceRate = totalAttendance === 0 ? 0 : Math.round((attended / totalAttendance) * 10000) / 100;
+
+    const endedSessions = await this.prisma.scheduleSession.count({
+      where: { classId, status: ClassSessionStatus.ENDED }
+    });
+
+    return {
+      endedSessions,
+      averageAttendanceRate
+    };
   }
 
   async getClassMeta(classId: string): Promise<{
@@ -167,11 +246,28 @@ export class ClassRepository {
     });
   }
 
+  private buildWhere(courseId: string, query: ClassSearchByCourseDto): Prisma.ClassWhereInput {
+    const { search } = query;
+
+    return {
+      courseId,
+      ...(search && {
+        classId: this.isValidUuid(search.trim()) ? search.trim() : undefined
+      })
+    };
+  }
+
+  private isValidUuid(value: string): boolean {
+    const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+    return uuidRegex.test(value);
+  }
+
   async findManyByCourseId(courseId: string, query: ClassSearchByCourseDto) {
     const { skip, limit, sortBy, sortOrder } = query;
+    const where = this.buildWhere(courseId, query);
 
     return this.prisma.class.findMany({
-      where: { courseId },
+      where,
       orderBy: { [sortBy]: sortOrder },
       skip,
       take: limit,
@@ -209,9 +305,80 @@ export class ClassRepository {
     });
   }
 
-  async countByCourseId(courseId: string): Promise<number> {
+  async countByCourseId(courseId: string, query: ClassSearchByCourseDto): Promise<number> {
     return this.prisma.class.count({
-      where: { courseId }
+      where: this.buildWhere(courseId, query)
+    });
+  }
+
+  private buildTeacherWhere(teacherId: string, query: ClassSearchByTeacherDto): Prisma.ClassWhereInput {
+    const { search } = query;
+
+    return {
+      teacherId,
+      ...(search && {
+        classId: this.isValidUuid(search.trim()) ? search.trim() : undefined
+      })
+    };
+  }
+
+  async findManyByTeacherId(teacherId: string, query: ClassSearchByTeacherDto) {
+    const { skip, limit, sortBy, sortOrder } = query;
+    const where = this.buildTeacherWhere(teacherId, query);
+
+    return this.prisma.class.findMany({
+      where,
+      orderBy: { [sortBy]: sortOrder },
+      skip,
+      take: limit,
+      select: {
+        classId: true,
+        maxStudents: true,
+        startDate: true,
+        roomCode: true,
+        _count: {
+          select: {
+            enrollments: true
+          }
+        },
+        course: {
+          select: {
+            courseId: true,
+            courseName: true
+          }
+        },
+        scheduleTemplate: {
+          select: {
+            templateId: true,
+            templateName: true,
+            weekdays: true,
+            shiftCode: true
+          }
+        },
+        teacher: {
+          select: {
+            teacherId: true,
+            teacherCode: true,
+            profile: {
+              select: {
+                fullName: true,
+                avatarUrl: true
+              }
+            }
+          }
+        },
+        room: {
+          select: {
+            roomCode: true
+          }
+        }
+      }
+    });
+  }
+
+  async countByTeacherId(teacherId: string, query: ClassSearchByTeacherDto): Promise<number> {
+    return this.prisma.class.count({
+      where: this.buildTeacherWhere(teacherId, query)
     });
   }
 }

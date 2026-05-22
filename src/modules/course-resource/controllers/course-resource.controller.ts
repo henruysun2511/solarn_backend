@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, Post, Query } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Post, Query, Delete, Param } from '@nestjs/common';
 import { ApiQuery, ApiTags } from '@nestjs/swagger';
 import { ResourceType } from '@prisma/client';
 import { Public, ResponseMessage } from 'common/decorators';
@@ -34,9 +34,14 @@ export class CourseResourceController {
   @Get()
   @ResponseMessage('Lấy danh sách tài nguyên khóa học thành công')
   async findAllByCourseId(@Query('courseId') courseId: string, @Query('type') type?: ResourceType) {
-    if (!courseId) {
-      throw new BadRequestException('courseId là bắt buộc');
-    }
     return this.courseResourceService.findAllByCourseId(courseId, type);
+  }
+
+  @SwaggerDoc({ summary: 'Delete course resource by resourceId', status: 200 })
+  @Public()
+  @Delete(':resourceId')
+  @ResponseMessage('Xóa tài nguyên khóa học thành công')
+  async delete(@Param('resourceId') resourceId: string) {
+    return this.courseResourceService.delete(resourceId);
   }
 }

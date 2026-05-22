@@ -33,10 +33,21 @@ export class CourseResourceRepository {
       select: {
         resourceId: true,
         courseId: true,
+        course: {
+          select: {
+            courseName: true
+          }
+        },
         title: true,
         fileUrl: true,
         type: true
       }
+    });
+  }
+
+  async delete(resourceId: string) {
+    return this.prisma.courseResource.delete({
+      where: { resourceId }
     });
   }
 }

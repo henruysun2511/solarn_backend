@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from 'prisma/prisma.service';
+
+import { MyAssignmentResultSearchDto } from '../dtos';
 
 export interface UpsertAssignmentResultItem {
   sessionId: string;
@@ -29,6 +32,81 @@ export class AssignmentResultRepository {
         gradedAt
       })),
       skipDuplicates: true
+    });
+  }
+
+  private buildTeacherWhere(teacherId: string, query: MyAssignmentResultSearchDto): Prisma.AssignmentResultWhereInput {
+    const { search, classId, sessionId } = query;
+    const where: Prisma.AssignmentResultWhereInput = {
+      session: {
+        class: {
+          teacherId
+        }
+      }
+    };
+
+    if (classId) {
+      where.session = {
+        ...(where.session as Prisma.ScheduleSessionWhereInput),
+        classId
+      };
+    }
+    if (sessionId) {
+      where.sessionId = sessionId;
+    }
+    if (search) {
+      where.student = {
+        OR: [
+          { studentCode: { contains: search, mode: 'insensitive' } },
+          { profile: { fullName: { contains: search, mode: 'insensitive' } } }
+        ]
+      };
+    }
+
+    return where;
+  }
+
+  async findManyByTeacherId(teacherId: string, query: MyAssignmentResultSearchDto) {
+    const { skip, limit, sortBy, sortOrder } = query;
+    return this.prisma.assignmentResult.findMany({
+      where: this.buildTeacherWhere(teacherId, query),
+      skip,
+      take: limit,
+      orderBy: { [sortBy]: sortOrder },
+      include: {
+        student: {
+          select: {
+            studentId: true,
+            studentCode: true,
+            profile: {
+              select: {
+                fullName: true,
+                avatarUrl: true
+              }
+            }
+          }
+        },
+        session: {
+          select: {
+            sessionId: true,
+            studyDate: true,
+            shiftCode: true,
+            class: {
+              select: {
+                classId: true,
+                roomCode: true,
+                course: { select: { courseName: true } }
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  async countByTeacherId(teacherId: string, query: MyAssignmentResultSearchDto): Promise<number> {
+    return this.prisma.assignmentResult.count({
+      where: this.buildTeacherWhere(teacherId, query)
     });
   }
 }

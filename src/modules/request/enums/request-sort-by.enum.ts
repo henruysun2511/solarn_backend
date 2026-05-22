@@ -26,3 +26,9 @@ export const ScheduleChangeSortBy = {
 } as const;
 
 export type ScheduleChangeSortBy = (typeof ScheduleChangeSortBy)[keyof typeof ScheduleChangeSortBy];
+
+export const RequestClassSortBy = {
+  CREATED_AT: 'createdAt',
+  STATUS: 'status'
+} as const;
+export type RequestClassSortBy = (typeof RequestClassSortBy)[keyof typeof RequestClassSortBy];

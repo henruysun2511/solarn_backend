@@ -9,6 +9,13 @@ export interface UpsertAttendanceInput {
   note?: string;
 }
 
+export interface AttendanceSummary {
+  present: number;
+  absent: number;
+  late: number;
+  total: number;
+}
+
 @Injectable()
 export class AttendanceRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -59,5 +66,44 @@ export class AttendanceRepository {
         }
       }
     });
+  }
+
+  async findBySessionId(sessionId: string) {
+    const records = await this.prisma.attendance.findMany({
+      where: { sessionId },
+      include: {
+        student: {
+          include: {
+            profile: {
+              select: {
+                fullName: true,
+                email: true,
+                phone: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: {
+        student: {
+          studentCode: 'asc'
+        }
+      }
+    });
+
+    const summary: AttendanceSummary = {
+      present: 0,
+      absent: 0,
+      late: 0,
+      total: records.length
+    };
+
+    for (const record of records) {
+      if (record.status === AttendanceStatus.PRESENT) summary.present += 1;
+      else if (record.status === AttendanceStatus.ABSENT) summary.absent += 1;
+      else if (record.status === AttendanceStatus.LATE) summary.late += 1;
+    }
+
+    return { records, summary };
   }
 }
