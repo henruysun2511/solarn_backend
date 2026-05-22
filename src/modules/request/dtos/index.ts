@@ -6,6 +6,7 @@ export * from './approve-request.dto';
 export * from './process-schedule-change.dto';
 export * from './process-salary-complaint.dto';
 export * from './process-transfer-request.dto';
+export * from './process-leave-request.dto';
 
 // Search DTOs
 export * from './leave-request-search.dto';

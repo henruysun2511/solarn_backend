@@ -498,7 +498,6 @@ model Request {
 
   // ── LEAVE_REQUEST ─────────────────────────────────────────
   // Học viên xin bảo lưu khóa học
-  // Quy tắc hoàn tiền: < 30% hoàn trả | 30–50% tiếp tục | >= 50% tiếp tục
   enrollmentId      String?      @map("enrollment_id")
   leaveStartDate    DateTime?    @map("leave_start_date") @db.Date
   leaveEndDate      DateTime?    @map("leave_end_date") @db.Date

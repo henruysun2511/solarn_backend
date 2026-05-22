@@ -17,6 +17,7 @@ import {
   CreateSalaryComplaintDto,
   CreateScheduleChangeDto,
   CreateTransferRequestDto,
+  ProcessLeaveRequestDto,
   ProcessSalaryComplaintDto,
   ProcessScheduleChangeDto,
   ProcessTransferRequestDto,
@@ -361,7 +362,25 @@ export class RequestService {
    * - Nếu `isSuccess = false`: reject request.
    */
   async processTransferRequest(requestId: string, approver: IAccountRequest, dto: ProcessTransferRequestDto) {
+    if (approver.roleName !== AppConfig.ROLE.ADMIN) {
+      throw new ForbiddenException('Chỉ ADMIN mới được xử lý yêu cầu chuyển lớp');
+    }
+
     return this.requestRepo.processTransferRequest({
+      requestId,
+      approverAccountId: approver.accountId,
+      isSuccess: dto.isSuccess,
+      approvalNote: dto.approvalNote
+    });
+  }
+
+  /**
+   * Xử lý yêu cầu bảo lưu (ADMIN) — bắt buộc cùng transaction.
+   * - Nếu `isSuccess = true`: update `Enrollment.status = DEFERRED` + set `Request.leaveStatus = ACTIVE` + approve request.
+   * - Nếu `isSuccess = false`: reject request.
+   */
+  async processLeaveRequest(requestId: string, approver: IAccountRequest, dto: ProcessLeaveRequestDto) {
+    return this.requestRepo.processLeaveRequest({
       requestId,
       approverAccountId: approver.accountId,
       isSuccess: dto.isSuccess,

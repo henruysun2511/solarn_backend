@@ -13,6 +13,7 @@ import {
   CreateScheduleChangeDto,
   CreateTransferRequestDto,
   LeaveRequestSearchDto,
+  ProcessLeaveRequestDto,
   ProcessSalaryComplaintDto,
   ProcessScheduleChangeDto,
   ProcessTransferRequestDto,
@@ -211,6 +212,23 @@ export class RequestController {
     @Body() dto: ProcessTransferRequestDto
   ) {
     return this.requestService.processTransferRequest(requestId, user, dto);
+  }
+
+  @SwaggerDoc({
+    summary: 'Xử lý yêu cầu bảo lưu',
+    description:
+      'ADMIN xử lý request bảo lưu. Nếu duyệt sẽ cập nhật Enrollment.status = DEFERRED và update request trong cùng 1 transaction.',
+    bodyType: ProcessLeaveRequestDto,
+    status: 200
+  })
+  @Patch('leave-request/:requestId/process')
+  @ResponseMessage('Xử lý yêu cầu bảo lưu thành công')
+  async processLeaveRequest(
+    @Param('requestId') requestId: string,
+    @User() user: IAccountRequest,
+    @Body() dto: ProcessLeaveRequestDto
+  ) {
+    return this.requestService.processLeaveRequest(requestId, user, dto);
   }
 
   @SwaggerDoc({

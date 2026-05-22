@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'prisma/prisma.service';
-import { EnrollmentStatus, Prisma, RequestStatus, RequestType } from '@prisma/client';
+import { EnrollmentStatus, LeaveStatus, Prisma, RequestStatus, RequestType } from '@prisma/client';
 
 import {
   SalaryComplaintSearchDto,
@@ -501,6 +501,148 @@ export class RequestRepository {
         request: updatedRequest,
         fromEnrollment: updatedFromEnrollment,
         toEnrollment: createdToEnrollment
+      };
+    });
+  }
+
+  async processLeaveRequest(data: {
+    requestId: string;
+    approverAccountId: string;
+    isSuccess: boolean;
+    approvalNote?: string;
+  }) {
+    return this.prisma.$transaction(async (tx) => {
+      const request = await tx.request.findUnique({
+        where: { requestId: data.requestId },
+        select: {
+          requestId: true,
+          type: true,
+          status: true,
+          enrollmentId: true,
+          leaveStartDate: true,
+          leaveEndDate: true,
+          leaveStatus: true
+        }
+      });
+
+      if (!request) {
+        throw new BadRequestException('Yêu cầu không tồn tại');
+      }
+
+      if (request.type !== RequestType.LEAVE_REQUEST) {
+        throw new BadRequestException('Request không phải loại bảo lưu');
+      }
+
+      if (request.status !== RequestStatus.PENDING) {
+        throw new ConflictException('Yêu cầu đã được xử lý');
+      }
+
+      if (!data.isSuccess) {
+        const updatedRequest = await tx.request.update({
+          where: { requestId: request.requestId },
+          data: {
+            status: RequestStatus.REJECTED,
+            approverAccountId: data.approverAccountId,
+            approvalNote: data.approvalNote
+          },
+          select: {
+            requestId: true,
+            type: true,
+            status: true,
+            senderAccountId: true,
+            approverAccountId: true,
+            approvalNote: true,
+            enrollmentId: true,
+            leaveStartDate: true,
+            leaveEndDate: true,
+            progressAtRequest: true,
+            leaveStatus: true,
+            reason: true,
+            createdAt: true,
+            updatedAt: true
+          }
+        });
+
+        return {
+          request: updatedRequest,
+          enrollment: null
+        };
+      }
+
+      if (!request.enrollmentId || !request.leaveStartDate || !request.leaveEndDate) {
+        throw new BadRequestException('Request bảo lưu thiếu dữ liệu (enrollmentId/leaveStartDate/leaveEndDate)');
+      }
+
+      const enrollment = await tx.enrollment.findUnique({
+        where: { enrollmentId: request.enrollmentId },
+        select: {
+          enrollmentId: true,
+          studentId: true,
+          classId: true,
+          status: true,
+          createdAt: true
+        }
+      });
+
+      if (!enrollment) {
+        throw new BadRequestException('Enrollment không tồn tại');
+      }
+
+      if (enrollment.status === EnrollmentStatus.DROPPED) {
+        throw new BadRequestException('Enrollment đã DROPPED, không thể bảo lưu');
+      }
+
+      if (enrollment.status === EnrollmentStatus.COMPLETED) {
+        throw new BadRequestException('Enrollment đã COMPLETED, không thể bảo lưu');
+      }
+
+      if (enrollment.status === EnrollmentStatus.DEFERRED) {
+        throw new ConflictException('Enrollment đã ở trạng thái DEFERRED');
+      }
+
+      const updatedEnrollment = await tx.enrollment.update({
+        where: { enrollmentId: enrollment.enrollmentId },
+        data: {
+          status: EnrollmentStatus.DEFERRED
+        },
+        select: {
+          enrollmentId: true,
+          studentId: true,
+          classId: true,
+          status: true,
+          createdAt: true
+        }
+      });
+
+      const updatedRequest = await tx.request.update({
+        where: { requestId: request.requestId },
+        data: {
+          status: RequestStatus.APPROVED,
+          leaveStatus: LeaveStatus.ACTIVE,
+          approverAccountId: data.approverAccountId,
+          approvalNote: data.approvalNote
+        },
+        select: {
+          requestId: true,
+          type: true,
+          status: true,
+          senderAccountId: true,
+          approverAccountId: true,
+          approvalNote: true,
+          enrollmentId: true,
+          leaveStartDate: true,
+          leaveEndDate: true,
+          progressAtRequest: true,
+          leaveStatus: true,
+          reason: true,
+          createdAt: true,
+          updatedAt: true
+        }
+      });
+
+      return {
+        request: updatedRequest,
+        enrollment: updatedEnrollment
       };
     });
   }
