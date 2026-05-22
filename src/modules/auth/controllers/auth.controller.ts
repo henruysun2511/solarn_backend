@@ -1,9 +1,9 @@
 import { Body, Controller, HttpCode, Post, Req, Res, UseGuards } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
-import { Public, ResponseMessage } from 'common/decorators';
-import { RequestWithUser } from 'common/interfaces';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Public, ResponseMessage, User } from 'common/decorators';
+import { IAccountRequest, RequestWithUser } from 'common/interfaces';
 import { SwaggerDoc } from 'common/swagger';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { RegisterStudentDto } from 'modules/account/dtos';
 
 import { LoginDto, VerifyOtpDto } from '../dtos';
@@ -46,15 +46,41 @@ export class AuthController {
     return this.authService.signUp(dto);
   }
 
-  @Post('verify-email')
-  @Public()
-  @ResponseMessage('Xác thực thành công')
   @SwaggerDoc({
     summary: 'Xác thực email',
     bodyType: VerifyOtpDto,
     status: 201
   })
+  @Post('verify-email')
+  @Public()
+  @ResponseMessage('Xác thực thành công')
   async verifyEmail(@Body() dto: VerifyOtpDto) {
     return this.otpService.verifyRegisterOtp(dto.email, dto.otp);
+  }
+
+  @SwaggerDoc({
+    summary: 'Logout',
+    description: 'Logout current device by revoking the refresh token in cookie',
+    status: 200
+  })
+  @ApiBearerAuth()
+  @Post('logout')
+  @HttpCode(200)
+  @ResponseMessage('Đăng xuất thành công')
+  async logout(@User() account: IAccountRequest, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const refreshToken = req.cookies?.refreshToken;
+    await this.authService.logout(account.accountId, refreshToken, res);
+  }
+
+  @Public()
+  @SwaggerDoc({
+    summary: 'Refresh Token',
+    status: 200
+  })
+  @Post('refresh-token')
+  @ResponseMessage('Lấy lại accessToken thành công')
+  async refreshToken(@Req() req: Request) {
+    const refreshToken = req.cookies?.refreshToken;
+    return await this.authService.refreshToken(refreshToken);
   }
 }

@@ -1,4 +1,10 @@
-import { BadRequestException, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { AccountService } from 'modules/account/services/account.service';
 import { RegisterStudentDto } from 'modules/account/dtos';
@@ -137,5 +143,40 @@ export class AuthService {
       secure: env.PROJECT_STAGE === AppConfig.STAGES.PRODUCTION,
       sameSite: 'none'
     });
+  }
+
+  async refreshToken(token: string) {
+    try {
+      if (!token) throw new UnauthorizedException('Vui lòng đăng nhập');
+      //Verify chữ ký & lấy payload
+      const payload = this.jwtService.verify(token, { secret: env.JWT_REFRESH_TOKEN_SECRET });
+
+      token = hashToken(token);
+
+      // Kiểm tra token có tồn tại trong db không
+      const tokenInDb = await this.authRepo.findTokenByAccountIdAndToken(payload.sub, token);
+
+      if (!tokenInDb) throw new UnauthorizedException('Token đã bị thu hồi');
+
+      // Kiểm tra account có tồn tại không
+      const account = await this.accountService.findById(payload.sub);
+      if (!account) throw new NotFoundException('Tài khoản không tồn tại');
+
+      // Tạo accessToken mới
+      const roleName = await this.roleService.getNameByRoleId(account.roleId);
+      const payloadAccessToken = await this.buildAuthPayload(account.accountId, roleName!);
+
+      const accessToken = this.jwtService.sign(payloadAccessToken);
+
+      return {
+        accessToken
+      };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
+      if (err.name === 'TokenExpiredError') {
+        throw new UnauthorizedException('Token đã hết hạn');
+      }
+      throw err;
+    }
   }
 }

@@ -13,4 +13,8 @@ export class AuthRepository {
   async deleteTokenByAccountIdAndToken(accountId: string, token: string): Promise<void> {
     await this.prisma.token.deleteMany({ where: { accountId, token } });
   }
+
+  findTokenByAccountIdAndToken(accountId: string, token: string): Promise<Token | null> {
+    return this.prisma.token.findUnique({ where: { accountId, token } });
+  }
 }
