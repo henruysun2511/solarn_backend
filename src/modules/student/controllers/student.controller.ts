@@ -1,13 +1,15 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
-import { Public, ResponseMessage } from 'common/decorators';
+import { Public, User, ResponseMessage } from 'common/decorators';
 import { SortOrder } from 'common/enums';
+import { IAccountRequest } from 'common/interfaces';
 import { SwaggerDoc } from 'common/swagger';
 
 import { StudentClassSearchDto } from '../dtos/student-class-search.dto';
 import { StudentSearchDto } from '../dtos/student-search.dto';
 import { StudentSortBy } from '../enums/student-sort-by.enum';
 import { StudentService } from '../services/student.service';
+import { UpdateStudentProfileDto } from '../dtos/update-student-profile.dto';
 
 @Controller('student')
 @ApiBearerAuth()
@@ -67,5 +69,26 @@ export class StudentController {
   @ResponseMessage('Lấy danh sách học sinh thành công')
   findAllByClassId(@Param('classId') classId: string, @Query() query: StudentClassSearchDto) {
     return this.studentService.findAllByClassId(classId, query);
+  }
+
+  @SwaggerDoc({
+    summary: 'Lấy thông tin profile của học sinh đang đăng nhập',
+    status: 200
+  })
+  @Get('profile')
+  @ResponseMessage('Lấy thông tin học sinh thành công')
+  async getMyProfile(@User() user: IAccountRequest) {
+    return this.studentService.findMyProfile(user.accountId);
+  }
+
+  @SwaggerDoc({
+    summary: 'Cập nhật thông tin profile học sinh',
+    status: 200,
+    bodyType: UpdateStudentProfileDto
+  })
+  @Patch('profile')
+  @ResponseMessage('Cập nhật thông tin học sinh thành công')
+  async updateMyProfile(@User() user: IAccountRequest, @Body() dto: UpdateStudentProfileDto) {
+    return this.studentService.updateMyProfile(user.accountId, dto);
   }
 }

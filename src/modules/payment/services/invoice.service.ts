@@ -3,13 +3,15 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { ClassService } from 'modules/class/services/class.service';
+import { IAccountRequest } from 'common/interfaces';
 import { StudentService } from 'modules/student/services/student.service';
 import { AppConfig } from 'common/constants';
 import { generateSignature } from 'common/utils';
 import { CustomLogger } from 'shared/logger/logger.service';
 import { InvoiceStatus } from '@prisma/client';
+import { paginate } from 'shared/helpers';
 
-import { IPayosRequestPaymentPayload, IPayosWebhookBodyPayload, InvoiceDto } from '../dtos';
+import { InvoiceSearchDto, IPayosRequestPaymentPayload, IPayosWebhookBodyPayload, InvoiceDto } from '../dtos';
 import { InvoiceRepository } from '../repositories/invoice.repository';
 
 @Injectable()
@@ -44,6 +46,19 @@ export class InvoiceService {
    * 2) Lấy giá tiền của lớp (từ Course.tuitionFee)
    * 3) Sinh orderCode ngẫu nhiên (< 10^8)
    */
+  async findMyInvoices(user: IAccountRequest, query: InvoiceSearchDto) {
+    const student = await this.studentService.findByAccountId(user.accountId);
+    if (!student) {
+      throw new BadRequestException('Học sinh không tồn tại');
+    }
+
+    const [data, total] = await Promise.all([
+      this.invoiceRepo.findManyByStudentId(student.studentId, query),
+      this.invoiceRepo.countByStudentId(student.studentId, query)
+    ]);
+    return paginate(data, total, query);
+  }
+
   async createInvoice(dto: InvoiceDto, accountId: string) {
     const studentId = await this.studentService.getStudentIdByAccountIdOrThrow(accountId);
 

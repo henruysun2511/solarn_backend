@@ -109,4 +109,64 @@ export class AssignmentResultRepository {
       where: this.buildTeacherWhere(teacherId, query)
     });
   }
+
+  private buildStudentWhere(studentId: string, query: MyAssignmentResultSearchDto): Prisma.AssignmentResultWhereInput {
+    const { search, classId, sessionId } = query;
+    const where: Prisma.AssignmentResultWhereInput = { studentId };
+
+    if (classId) {
+      where.session = { classId };
+    }
+    if (sessionId) {
+      where.sessionId = sessionId;
+    }
+    if (search) {
+      where.session = {
+        ...((where.session as Prisma.ScheduleSessionWhereInput) || {}),
+        class: {
+          course: { courseName: { contains: search, mode: 'insensitive' } }
+        }
+      };
+    }
+
+    return where;
+  }
+
+  async findManyByStudentId(studentId: string, query: MyAssignmentResultSearchDto) {
+    const { skip, limit, sortBy, sortOrder } = query;
+    return this.prisma.assignmentResult.findMany({
+      where: this.buildStudentWhere(studentId, query),
+      skip,
+      take: limit,
+      orderBy: { [sortBy]: sortOrder },
+      include: {
+        session: {
+          select: {
+            sessionId: true,
+            studyDate: true,
+            shiftCode: true,
+            shift: {
+              select: {
+                shiftName: true,
+                timeRange: true
+              }
+            },
+            class: {
+              select: {
+                classId: true,
+                roomCode: true,
+                course: { select: { courseName: true } }
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  async countByStudentId(studentId: string, query: MyAssignmentResultSearchDto): Promise<number> {
+    return this.prisma.assignmentResult.count({
+      where: this.buildStudentWhere(studentId, query)
+    });
+  }
 }

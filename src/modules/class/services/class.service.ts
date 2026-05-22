@@ -4,10 +4,17 @@ import { CourseService } from 'modules/course/services/course.service';
 import { EnrollmentService } from 'modules/enrollment/services/enrollment.service';
 import { ScheduleSessionService } from 'modules/schedule-session/services/schedule-session.service';
 import { ScheduleTemplateService } from 'modules/schedule-template/services/schedule-template.service';
+import { StudentService } from 'modules/student/services/student.service';
 import { TeacherService } from 'modules/teacher/services/teacher.service';
 import { paginate } from 'shared/helpers';
 
-import { ClassSearchByCourseDto, ClassSearchByTeacherDto, CreateClassDto } from '../dtos';
+import {
+  ClassSearchByCourseDto,
+  ClassSearchByDto,
+  ClassSearchByStudentDto,
+  ClassSearchByTeacherDto,
+  CreateClassDto
+} from '../dtos';
 import { ClassRepository } from '../repositories/class.repository';
 import { generateScheduleSessions, normalizeDate, parseWeekdays } from '../utils';
 
@@ -19,7 +26,8 @@ export class ClassService {
     private readonly scheduleTemplateService: ScheduleTemplateService,
     private readonly scheduleSessionService: ScheduleSessionService,
     private readonly enrollmentService: EnrollmentService,
-    private readonly teacherService: TeacherService
+    private readonly teacherService: TeacherService,
+    private readonly studentService: StudentService
   ) {}
 
   /**
@@ -178,6 +186,39 @@ export class ClassService {
     const [classes, total] = await Promise.all([
       this.classRepo.findManyByTeacherId(teacher.teacherId, query),
       this.classRepo.countByTeacherId(teacher.teacherId, query)
+    ]);
+
+    const data = classes.map((c) => {
+      const { _count, ...rest } = c;
+      return {
+        ...rest,
+        registeredStudents: _count.enrollments
+      };
+    });
+
+    return paginate(data, total, query);
+  }
+
+  async findAll(query: ClassSearchByDto) {
+    const [classes, total] = await Promise.all([this.classRepo.findMany(query), this.classRepo.countAll(query)]);
+
+    const data = classes.map((c) => {
+      const { _count, ...rest } = c;
+      return { ...rest, registeredStudents: _count.enrollments };
+    });
+
+    return paginate(data, total, query);
+  }
+
+  async findMyEnrolledClasses(accountId: string, query: ClassSearchByStudentDto) {
+    const student = await this.studentService.findByAccountId(accountId);
+    if (!student) {
+      return paginate([], 0, query);
+    }
+
+    const [classes, total] = await Promise.all([
+      this.classRepo.findManyByStudentId(student.studentId, query),
+      this.classRepo.countByStudentId(student.studentId, query)
     ]);
 
     const data = classes.map((c) => {

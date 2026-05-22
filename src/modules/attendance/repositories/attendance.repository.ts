@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { Attendance, AttendanceStatus } from '@prisma/client';
+import { Attendance, AttendanceStatus, Prisma } from '@prisma/client';
 import { PrismaService } from 'prisma/prisma.service';
+
+import { MyAttendanceSearchDto } from '../dtos';
 
 export interface UpsertAttendanceInput {
   sessionId: string;
@@ -105,5 +107,65 @@ export class AttendanceRepository {
     }
 
     return { records, summary };
+  }
+
+  private buildMyAttendanceWhere(studentId: string, query: MyAttendanceSearchDto): Prisma.AttendanceWhereInput {
+    const { search, status, classId } = query;
+    return {
+      studentId,
+      ...(status && { status }),
+      ...(classId && { session: { classId } }),
+      ...(search && {
+        session: {
+          class: {
+            course: { courseName: { contains: search, mode: 'insensitive' } }
+          }
+        }
+      })
+    };
+  }
+
+  async findMyAttendances(studentId: string, query: MyAttendanceSearchDto) {
+    const { skip, limit, sortOrder } = query;
+    const where = this.buildMyAttendanceWhere(studentId, query);
+
+    const orderBy: Prisma.AttendanceOrderByWithRelationInput =
+      query.sortBy === 'studyDate' ? { session: { studyDate: sortOrder } } : { [query.sortBy]: sortOrder };
+
+    return this.prisma.attendance.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy,
+      include: {
+        session: {
+          select: {
+            sessionId: true,
+            studyDate: true,
+            shiftCode: true,
+            shift: {
+              select: {
+                shiftName: true,
+                timeRange: true
+              }
+            },
+            class: {
+              select: {
+                classId: true,
+                course: {
+                  select: { courseName: true }
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  async countMyAttendances(studentId: string, query: MyAttendanceSearchDto): Promise<number> {
+    return this.prisma.attendance.count({
+      where: this.buildMyAttendanceWhere(studentId, query)
+    });
   }
 }

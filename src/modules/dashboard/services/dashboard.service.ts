@@ -1,13 +1,15 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { ClassSessionStatus, EnrollmentStatus, RequestStatus, RequestType } from '@prisma/client';
+import { ClassSessionStatus, EnrollmentStatus, InvoiceStatus, RequestStatus, RequestType } from '@prisma/client';
 import { PrismaService } from 'prisma/prisma.service';
 import { TeacherService } from 'modules/teacher/services/teacher.service';
+import { StudentService } from 'modules/student/services/student.service';
 
 @Injectable()
 export class DashboardService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly teacherService: TeacherService
+    private readonly teacherService: TeacherService,
+    private readonly studentService: StudentService
   ) {}
 
   async getTeacherDashboard(accountId: string) {
@@ -211,5 +213,129 @@ export class DashboardService {
         roomCode: s.class.roomCode
       }
     }));
+  }
+
+  async getStudentDashboard(accountId: string) {
+    const student = await this.studentService.findByAccountId(accountId);
+    if (!student) throw new NotFoundException('Không tìm thấy học sinh');
+
+    const { studentId } = student;
+
+    const [
+      totalClasses,
+      totalAttended,
+      totalAbsent,
+      averageScore,
+      upcomingSessions,
+      totalInvoices,
+      paidInvoices,
+      pendingLeaveRequests
+    ] = await Promise.all([
+      this.countStudentClasses(studentId),
+      this.countStudentAttendance(studentId, 'PRESENT'),
+      this.countStudentAttendance(studentId, 'ABSENT'),
+      this.calcStudentAverageScore(studentId),
+      this.getUpcomingSessions(studentId),
+      this.countStudentInvoices(studentId),
+      this.countStudentInvoicesByStatus(studentId, InvoiceStatus.PAID),
+      this.countPendingLeaveRequests(accountId)
+    ]);
+
+    const attendanceRate =
+      totalAttended + totalAbsent > 0 ? Math.round((totalAttended / (totalAttended + totalAbsent)) * 100) : 0;
+
+    return {
+      totalClasses,
+      totalAttended,
+      totalAbsent,
+      attendanceRate,
+      averageScore,
+      upcomingSessions,
+      totalInvoices,
+      paidInvoices,
+      unpaidInvoices: totalInvoices - paidInvoices,
+      pendingLeaveRequests
+    };
+  }
+
+  private async countStudentClasses(studentId: string) {
+    return this.prisma.enrollment.count({
+      where: { studentId, NOT: { status: EnrollmentStatus.DROPPED } }
+    });
+  }
+
+  private async countStudentAttendance(studentId: string, status: string) {
+    return this.prisma.attendance.count({
+      where: { studentId, status: status as any }
+    });
+  }
+
+  private async calcStudentAverageScore(studentId: string) {
+    const result = await this.prisma.assignmentResult.aggregate({
+      where: { studentId },
+      _avg: { score: true }
+    });
+    return Number((result._avg.score || 0).toFixed(2));
+  }
+
+  private async getUpcomingSessions(studentId: string) {
+    const now = new Date();
+    const enrollments = await this.prisma.enrollment.findMany({
+      where: { studentId, NOT: { status: EnrollmentStatus.DROPPED } },
+      select: { classId: true }
+    });
+    if (enrollments.length === 0) return [];
+
+    const classIds = enrollments.map((e) => e.classId);
+    const sessions = await this.prisma.scheduleSession.findMany({
+      where: {
+        classId: { in: classIds },
+        studyDate: { gte: now }
+      },
+      include: {
+        class: {
+          select: {
+            classId: true,
+            roomCode: true,
+            course: { select: { courseName: true } }
+          }
+        },
+        shift: { select: { shiftName: true, timeRange: true } }
+      },
+      orderBy: { studyDate: 'asc' },
+      take: 5
+    });
+
+    return sessions.map((s) => ({
+      sessionId: s.sessionId,
+      studyDate: s.studyDate,
+      shiftCode: s.shiftCode,
+      shiftName: s.shift.shiftName,
+      timeRange: s.shift.timeRange,
+      status: s.status,
+      class: {
+        classId: s.class.classId,
+        courseName: s.class.course.courseName,
+        roomCode: s.class.roomCode
+      }
+    }));
+  }
+
+  private async countStudentInvoices(studentId: string) {
+    return this.prisma.invoice.count({ where: { studentId } });
+  }
+
+  private async countStudentInvoicesByStatus(studentId: string, status: InvoiceStatus) {
+    return this.prisma.invoice.count({ where: { studentId, status } });
+  }
+
+  private async countPendingLeaveRequests(accountId: string) {
+    return this.prisma.request.count({
+      where: {
+        senderAccountId: accountId,
+        type: RequestType.LEAVE_REQUEST,
+        status: RequestStatus.PENDING
+      }
+    });
   }
 }

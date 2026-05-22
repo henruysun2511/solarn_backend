@@ -1,8 +1,12 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { IAccountRequest } from 'common/interfaces';
 import { EnrollmentService } from 'modules/enrollment/services/enrollment.service';
 import { ScheduleSessionService } from 'modules/schedule-session/services/schedule-session.service';
+import { StudentService } from 'modules/student/services/student.service';
+import { paginate } from 'shared/helpers';
 
 import { AttendanceRepository, UpsertAttendanceInput } from '../repositories/attendance.repository';
+import { MyAttendanceSearchDto } from '../dtos';
 import { ATTENDANCE_ERRORS } from '../constants/attendance-errors.constant';
 
 @Injectable()
@@ -10,7 +14,8 @@ export class AttendanceService {
   constructor(
     private readonly attendanceRepo: AttendanceRepository,
     private readonly scheduleSessionService: ScheduleSessionService,
-    private readonly enrollmentService: EnrollmentService
+    private readonly enrollmentService: EnrollmentService,
+    private readonly studentService: StudentService
   ) {}
 
   private async assertStudentsBelongToSessionClass(items: UpsertAttendanceInput[]): Promise<void> {
@@ -70,5 +75,15 @@ export class AttendanceService {
 
   findBySessionId(sessionId: string) {
     return this.attendanceRepo.findBySessionId(sessionId);
+  }
+
+  async findMyAttendances(user: IAccountRequest, query: MyAttendanceSearchDto) {
+    const student = await this.studentService.getStudentIdByAccountIdOrThrow(user.accountId);
+
+    const [data, total] = await Promise.all([
+      this.attendanceRepo.findMyAttendances(student, query),
+      this.attendanceRepo.countMyAttendances(student, query)
+    ]);
+    return paginate(data, total, query);
   }
 }

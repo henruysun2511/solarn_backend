@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from 'prisma/prisma.module';
+import { StudentModule } from 'modules/student/student.module';
 import { TeacherModule } from 'modules/teacher/teacher.module';
 
 import { AssignmentResultService } from './services/assignment-result.service';
@@ -7,7 +8,7 @@ import { AssignmentResultController } from './controllers/assignment-result.cont
 import { AssignmentResultRepository } from './repositories/assignment-result.repository';
 
 @Module({
-  imports: [PrismaModule, TeacherModule],
+  imports: [PrismaModule, StudentModule, TeacherModule],
   controllers: [AssignmentResultController],
   providers: [AssignmentResultService, AssignmentResultRepository]
 })

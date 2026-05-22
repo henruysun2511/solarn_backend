@@ -22,4 +22,14 @@ export class DashboardController {
   async getTeacherDashboard(@User() user: IAccountRequest) {
     return this.dashboardService.getTeacherDashboard(user.accountId);
   }
+
+  @SwaggerDoc({
+    summary: 'Lấy thông số thống kê cho student dashboard',
+    status: 200
+  })
+  @Get('student')
+  @ResponseMessage('Lấy thông tin dashboard thành công')
+  async getStudentDashboard(@User() user: IAccountRequest) {
+    return this.dashboardService.getStudentDashboard(user.accountId);
+  }
 }

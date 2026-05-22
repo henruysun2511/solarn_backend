@@ -17,6 +17,10 @@ import {
   CreateSalaryComplaintDto,
   CreateScheduleChangeDto,
   CreateTransferRequestDto,
+  ProcessLeaveRequestDto,
+  ProcessSalaryComplaintDto,
+  ProcessScheduleChangeDto,
+  ProcessTransferRequestDto,
   SalaryComplaintSearchDto,
   TransferRequestSearchDto,
   LeaveRequestSearchDto,
@@ -356,6 +360,74 @@ export class RequestService {
     return this.requestRepo.approveRequest({
       requestId,
       approverAccountId: approver.accountId,
+      approvalNote: dto.approvalNote
+    });
+  }
+
+  /**
+   * Xử lý khiếu nại lương (ADMIN)
+   * - isSuccess=false: REJECTED
+   * - isSuccess=true: cập nhật Salary.totalAmount theo proposedAmount + APPROVED request (cùng transaction)
+   */
+  async processSalaryComplaint(requestId: string, user: IAccountRequest, dto: ProcessSalaryComplaintDto) {
+    if (user.roleName !== AppConfig.ROLE.ADMIN) {
+      throw new ForbiddenException('Chỉ ADMIN mới được xử lý khiếu nại lương');
+    }
+
+    return this.requestRepo.processSalaryComplaintRequest({
+      requestId,
+      approverAccountId: user.accountId,
+      isSuccess: dto.isSuccess,
+      approvalNote: dto.approvalNote
+    });
+  }
+
+  /**
+   * Xử lý yêu cầu đổi lịch/ca học (ADMIN) — bắt buộc cùng transaction.
+   * - Nếu `isSuccess = true`: update `ScheduleSession` theo đề xuất + approve request.
+   * - Nếu `isSuccess = false`: reject request.
+   */
+  async processScheduleChange(requestId: string, approver: IAccountRequest, dto: ProcessScheduleChangeDto) {
+    if (approver.roleName !== AppConfig.ROLE.ADMIN) {
+      throw new ForbiddenException('Chỉ ADMIN mới được xử lý yêu cầu đổi lịch');
+    }
+
+    return this.requestRepo.processScheduleChangeRequest({
+      requestId,
+      approverAccountId: approver.accountId,
+      isSuccess: dto.isSuccess,
+      approvalNote: dto.approvalNote
+    });
+  }
+
+  /**
+   * Xử lý yêu cầu chuyển lớp (ADMIN) — bắt buộc cùng transaction.
+   * - Nếu `isSuccess = true`: drop enrollment lớp nguồn + tạo enrollment lớp đích + approve request.
+   * - Nếu `isSuccess = false`: reject request.
+   */
+  async processTransferRequest(requestId: string, approver: IAccountRequest, dto: ProcessTransferRequestDto) {
+    if (approver.roleName !== AppConfig.ROLE.ADMIN) {
+      throw new ForbiddenException('Chỉ ADMIN mới được xử lý yêu cầu chuyển lớp');
+    }
+
+    return this.requestRepo.processTransferRequest({
+      requestId,
+      approverAccountId: approver.accountId,
+      isSuccess: dto.isSuccess,
+      approvalNote: dto.approvalNote
+    });
+  }
+
+  /**
+   * Xử lý yêu cầu bảo lưu (ADMIN) — bắt buộc cùng transaction.
+   * - Nếu `isSuccess = true`: update `Enrollment.status = DEFERRED` + set `Request.leaveStatus = ACTIVE` + approve request.
+   * - Nếu `isSuccess = false`: reject request.
+   */
+  async processLeaveRequest(requestId: string, approver: IAccountRequest, dto: ProcessLeaveRequestDto) {
+    return this.requestRepo.processLeaveRequest({
+      requestId,
+      approverAccountId: approver.accountId,
+      isSuccess: dto.isSuccess,
       approvalNote: dto.approvalNote
     });
   }

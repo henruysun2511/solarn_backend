@@ -19,8 +19,26 @@ export class StudentRepository {
       },
       select: {
         studentId: true,
+        studentCode: true,
         profile: { select: { accountId: true, fullName: true } }
       }
+    });
+  }
+
+  async findStudentProfileByAccountId(accountId: string) {
+    return this.prisma.student.findFirst({
+      where: { profile: { accountId } },
+      include: { profile: true }
+    });
+  }
+
+  async updateProfile(
+    accountId: string,
+    data: { fullName?: string; phone?: string; gender?: any; dob?: Date; avatarUrl?: string }
+  ) {
+    return this.prisma.profile.update({
+      where: { accountId },
+      data
     });
   }
 
