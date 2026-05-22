@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { ResponseMessage } from 'common/decorators';
 import { SwaggerDoc } from 'common/swagger';
 
@@ -19,5 +19,15 @@ export class AttendanceController {
   @ResponseMessage('Điểm danh thành công')
   async upsertMany(@Body() items: UpsertAttendanceDto[]) {
     return this.attendanceService.upsertMany(items);
+  }
+
+  @SwaggerDoc({
+    summary: 'Get attendance by session ID',
+    description: 'Returns attendance records with student info and summary counts (present, absent, late).'
+  })
+  @Get('session/:sessionId')
+  @ResponseMessage('Lấy danh sách điểm danh thành công')
+  async findBySessionId(@Param('sessionId') sessionId: string) {
+    return this.attendanceService.findBySessionId(sessionId);
   }
 }

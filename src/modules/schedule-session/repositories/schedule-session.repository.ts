@@ -2,6 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { ClassSessionStatus } from '@prisma/client';
 import { PrismaService } from 'prisma/prisma.service';
 
+import { ScheduleSessionClassSearchDto } from '../dtos/schedule-session-class-search.dto';
+import { ScheduleSessionSearchDto } from '../dtos/schedule-session.search.dto';
+
 @Injectable()
 export class ScheduleSessionRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -180,5 +183,73 @@ export class ScheduleSessionRepository {
         }
       }
     });
+  }
+
+  async findManyByClassId(classId: string, query: ScheduleSessionClassSearchDto) {
+    const { skip, limit, sortBy, sortOrder, studyDate } = query;
+    const where: import('@prisma/client').Prisma.ScheduleSessionWhereInput = {
+      classId,
+      ...(studyDate && { studyDate: { equals: new Date(studyDate) } })
+    };
+    return this.prisma.scheduleSession.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy: { [sortBy]: sortOrder },
+      include: { shift: true }
+    });
+  }
+
+  async countByClassIdQuery(classId: string, query: ScheduleSessionClassSearchDto) {
+    const { studyDate } = query;
+    const where: import('@prisma/client').Prisma.ScheduleSessionWhereInput = {
+      classId,
+      ...(studyDate && { studyDate: { equals: new Date(studyDate) } })
+    };
+    return this.prisma.scheduleSession.count({ where });
+  }
+
+  async findMany(query: ScheduleSessionSearchDto) {
+    const { skip, limit, sortBy, sortOrder, status, classId, shiftCode } = query;
+
+    const where: import('@prisma/client').Prisma.ScheduleSessionWhereInput = {
+      ...(status && { status }),
+      ...(classId && { classId }),
+      ...(shiftCode && { shiftCode })
+    };
+
+    return this.prisma.scheduleSession.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy: { [sortBy]: sortOrder },
+      include: {
+        shift: true,
+        class: {
+          select: {
+            classId: true,
+            // classCode: true,
+            room: {
+              select: {
+                roomId: true,
+                roomCode: true
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  async countQuery(query: ScheduleSessionSearchDto) {
+    const { status, classId, shiftCode } = query;
+
+    const where: import('@prisma/client').Prisma.ScheduleSessionWhereInput = {
+      ...(status && { status }),
+      ...(classId && { classId }),
+      ...(shiftCode && { shiftCode })
+    };
+
+    return this.prisma.scheduleSession.count({ where });
   }
 }

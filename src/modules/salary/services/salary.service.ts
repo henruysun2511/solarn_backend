@@ -1,9 +1,12 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { IAccountRequest } from 'common/interfaces';
 import { TeacherService } from 'modules/teacher/services/teacher.service';
 import { ScheduleSessionService } from 'modules/schedule-session/services/schedule-session.service';
+import { paginate } from 'shared/helpers';
 
 import { SalaryRepository } from '../repositories/salary.repository';
+import { SalarySearchDto } from '../dtos';
 
 export interface SalaryPreviewItem {
   teacherId: string;
@@ -106,6 +109,20 @@ export class SalaryService {
     const salaryDate = new Date(Date.UTC(year, month - 1, 1));
     const nextMonthDate = new Date(Date.UTC(year, month, 1));
     return { salaryDate, nextMonthDate };
+  }
+
+  async findMySalaries(user: IAccountRequest, query: SalarySearchDto) {
+    const teacher = await this.teacherService.findTeacherByAccountId(user.accountId);
+    if (!teacher) {
+      throw new BadRequestException('Giáo viên không tồn tại');
+    }
+    query.teacherId = teacher.teacherId;
+    return this.findAll(query);
+  }
+
+  async findAll(query: SalarySearchDto) {
+    const [data, total] = await Promise.all([this.salaryRepo.findMany(query), this.salaryRepo.count(query)]);
+    return paginate(data, total, query);
   }
 
   findSalaryById(salaryId: string) {

@@ -48,7 +48,7 @@ export class CourseRepository {
   }
 
   async findById(courseId: string) {
-    return this.prisma.course.findUnique({
+    const course = await this.prisma.course.findUnique({
       where: { courseId },
       include: {
         _count: {
@@ -56,6 +56,23 @@ export class CourseRepository {
         }
       }
     });
+
+    if (!course) return null;
+
+    const totalStudents = await this.prisma.enrollment.count({
+      where: {
+        class: {
+          courseId
+        }
+      }
+    });
+
+    const estimatedRevenue = Number(course.tuitionFee) * totalStudents;
+
+    return {
+      ...course,
+      estimatedRevenue
+    };
   }
 
   async update(courseId: string, data: Prisma.CourseUpdateInput): Promise<Course> {

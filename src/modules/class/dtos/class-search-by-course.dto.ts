@@ -1,8 +1,10 @@
-import { IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsOptional } from 'class-validator';
 import { SearchDto } from 'shared/base';
+
+import { ClassSortBy } from '../enums/class-sort-by.enum';
 
 export class ClassSearchByCourseDto extends SearchDto {
   @IsOptional()
-  @IsString()
-  sortBy: string = 'startDate';
+  @IsEnum(ClassSortBy)
+  sortBy: ClassSortBy = ClassSortBy.START_DATE;
 }

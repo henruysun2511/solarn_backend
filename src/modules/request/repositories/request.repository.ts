@@ -8,6 +8,7 @@ import {
   LeaveRequestSearchDto,
   ScheduleChangeSearchDto
 } from '../dtos';
+import { RequestClassSearchDto } from '../dtos/request-class-search.dto';
 
 @Injectable()
 export class RequestRepository {
@@ -1180,5 +1181,26 @@ export class RequestRepository {
     return this.prisma.request.count({
       where: this.buildScheduleChangeWhere(query)
     });
+  }
+
+  async findManyByClassId(classId: string, query: RequestClassSearchDto) {
+    const { skip, limit, sortBy, sortOrder } = query;
+    const where: import('@prisma/client').Prisma.RequestWhereInput = {
+      OR: [{ session: { classId } }, { enrollment: { classId } }, { fromClassId: classId }, { toClassId: classId }]
+    };
+    return this.prisma.request.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy: { [sortBy]: sortOrder },
+      include: { senderAccount: { include: { profile: true } } }
+    });
+  }
+
+  async countByClassIdQuery(classId: string, query: RequestClassSearchDto) {
+    const where: import('@prisma/client').Prisma.RequestWhereInput = {
+      OR: [{ session: { classId } }, { enrollment: { classId } }, { fromClassId: classId }, { toClassId: classId }]
+    };
+    return this.prisma.request.count({ where });
   }
 }
