@@ -12,6 +12,10 @@ export class InvoiceSearchDto extends SearchDto {
   classId?: string;
 
   @IsOptional()
+  @IsUUID()
+  studentId?: string;
+
+  @IsOptional()
   @IsString()
   sortBy: string = 'createdAt';
 }

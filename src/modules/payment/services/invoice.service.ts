@@ -59,6 +59,11 @@ export class InvoiceService {
     return paginate(data, total, query);
   }
 
+  async findAll(query: InvoiceSearchDto) {
+    const [data, total] = await Promise.all([this.invoiceRepo.findMany(query), this.invoiceRepo.count(query)]);
+    return paginate(data, total, query);
+  }
+
   async createInvoice(dto: InvoiceDto, accountId: string) {
     const studentId = await this.studentService.getStudentIdByAccountIdOrThrow(accountId);
 

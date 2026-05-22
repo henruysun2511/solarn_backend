@@ -26,6 +26,7 @@ export class ClassController {
     bodyType: CreateClassDto,
     status: 201
   })
+  @Public()
   @Post('')
   @ResponseMessage('Tạo lớp thành công')
   async create(@Body() dto: CreateClassDto) {

@@ -452,6 +452,8 @@ model Feedback {
 
   starRating Int @map("star_rating")
 
+  isFeatured Boolean @default(false) @map("is_featured")
+
   createdAt DateTime @default(now()) @map("created_at")
 
   student Student @relation(fields: [studentId], references: [studentId], onDelete: Cascade)

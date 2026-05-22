@@ -169,7 +169,9 @@ export class AuthService {
       const accessToken = this.jwtService.sign(payloadAccessToken);
 
       return {
-        accessToken
+        accessToken,
+        roleName,
+        username: account.username
       };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {

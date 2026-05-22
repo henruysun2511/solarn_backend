@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, Query, ParseUUIDPipe } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Public, User, ResponseMessage } from 'common/decorators';
 import { IAccountRequest } from 'common/interfaces';
@@ -81,6 +81,18 @@ export class CourseController {
   @ResponseMessage('Lấy tiến độ học tập thành công')
   async findMyProgress(@User() user: IAccountRequest) {
     return this.courseProgressService.findMyStudentProgress(user.accountId);
+  }
+
+  @SwaggerDoc({
+    summary: 'Get teacher progress list',
+    description: 'Danh sách tiến độ học sinh theo giáo viên, có thể lọc theo classId.',
+    status: 200
+  })
+  @ApiQuery({ name: 'classId', required: false, type: String, description: 'Filter by class ID' })
+  @Get('teacher-progress')
+  @ResponseMessage('Lấy danh sách tiến độ thành công')
+  async getTeacherProgressList(@User() user: IAccountRequest, @Query('classId') classId?: string) {
+    return this.courseProgressService.getTeacherProgressList(user.accountId, classId);
   }
 
   @SwaggerDoc({

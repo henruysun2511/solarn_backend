@@ -37,6 +37,14 @@ export class AssignmentResultService {
     return paginate(data, total, query);
   }
 
+  async findAll(query: MyAssignmentResultSearchDto) {
+    const [data, total] = await Promise.all([
+      this.assignmentResultRepo.findMany(query),
+      this.assignmentResultRepo.count(query)
+    ]);
+    return paginate(data, total, query);
+  }
+
   async findMyStudentResults(user: IAccountRequest, query: MyAssignmentResultSearchDto) {
     const student = await this.studentService.findByAccountId(user.accountId);
     if (!student) {

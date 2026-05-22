@@ -1,7 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { EnrollmentStatus } from '@prisma/client';
+import { paginate } from 'shared/helpers';
 
 import { EnrollmentRepository } from '../repositories/enrollment.repository';
+import { EnrollmentSearchDto } from '../dtos';
 
 @Injectable()
 export class EnrollmentService {
@@ -36,5 +38,14 @@ export class EnrollmentService {
 
   findActiveEnrollmentsByStudentId(studentId: string) {
     return this.enrollmentRepo.findActiveEnrollmentsByStudentId(studentId);
+  }
+
+  findActiveEnrollmentsByClassIds(classIds: string[]) {
+    return this.enrollmentRepo.findActiveEnrollmentsByClassIds(classIds);
+  }
+
+  async findAll(query: EnrollmentSearchDto) {
+    const [data, total] = await Promise.all([this.enrollmentRepo.findMany(query), this.enrollmentRepo.count(query)]);
+    return paginate(data, total, query);
   }
 }

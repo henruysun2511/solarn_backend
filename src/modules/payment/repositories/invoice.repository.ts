@@ -69,4 +69,60 @@ export class InvoiceRepository {
       where: this.buildStudentWhere(studentId, query)
     });
   }
+
+  private buildAdminWhere(query: InvoiceSearchDto): Prisma.InvoiceWhereInput {
+    const { search, status, classId, studentId } = query;
+    return {
+      ...(status && { status }),
+      ...(classId && { classId }),
+      ...(studentId && { studentId }),
+      ...(search && {
+        OR: [
+          { transactionId: { contains: search, mode: 'insensitive' } },
+          { class: { course: { courseName: { contains: search, mode: 'insensitive' } } } },
+          { student: { profile: { fullName: { contains: search, mode: 'insensitive' } } } }
+        ]
+      })
+    };
+  }
+
+  async findMany(query: InvoiceSearchDto) {
+    const { skip, limit, sortBy, sortOrder } = query;
+    return this.prisma.invoice.findMany({
+      where: this.buildAdminWhere(query),
+      skip,
+      take: limit,
+      orderBy: { [sortBy]: sortOrder },
+      select: {
+        invoiceId: true,
+        studentId: true,
+        classId: true,
+        amount: true,
+        status: true,
+        transactionId: true,
+        createdAt: true,
+        student: {
+          select: {
+            studentId: true,
+            studentCode: true,
+            profile: {
+              select: { fullName: true, email: true, phone: true }
+            }
+          }
+        },
+        class: {
+          select: {
+            roomCode: true,
+            course: { select: { courseName: true } }
+          }
+        }
+      }
+    });
+  }
+
+  async count(query: InvoiceSearchDto): Promise<number> {
+    return this.prisma.invoice.count({
+      where: this.buildAdminWhere(query)
+    });
+  }
 }

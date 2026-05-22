@@ -19,6 +19,29 @@ export class InvoiceController {
     return this.paymentService.createInvoice(dto, user.accountId);
   }
 
+  @SwaggerDoc({
+    summary: 'Lấy danh sách hóa đơn (admin)',
+    description: 'Returns paginated invoices with optional filters.',
+    status: 200
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description: 'Search by transaction ID, course name, or student name'
+  })
+  @ApiQuery({ name: 'status', required: false, enum: ['PENDING', 'PAID', 'CANCELLED'] })
+  @ApiQuery({ name: 'classId', required: false, type: String, description: 'Filter by class ID' })
+  @ApiQuery({ name: 'studentId', required: false, type: String, description: 'Filter by student ID' })
+  @ApiQuery({ name: 'sortOrder', required: false, enum: SortOrder })
+  @Get('')
+  @ResponseMessage('Lấy danh sách hóa đơn thành công')
+  async findAll(@Query() query: InvoiceSearchDto) {
+    return this.paymentService.findAll(query);
+  }
+
   @Public()
   @Post('webhook')
   @UseGuards(PaymentWebhookGuard)
