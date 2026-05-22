@@ -444,12 +444,15 @@ model Enrollment {
 }
 
 model Feedback {
-  feedbackId String   @id @default(uuid()) @map("feedback_id")
-  studentId  String   @map("student_id")
-  classId    String   @map("class_id")
-  teacherId  String   @map("teacher_id")
-  content    String   @map("content") @db.Text
-  createdAt  DateTime @default(now()) @map("created_at")
+  feedbackId String @id @default(uuid()) @map("feedback_id")
+  studentId  String @map("student_id")
+  classId    String @map("class_id")
+  teacherId  String @map("teacher_id")
+  content    String @map("content") @db.Text
+
+  starRating Int @map("star_rating")
+
+  createdAt DateTime @default(now()) @map("created_at")
 
   student Student @relation(fields: [studentId], references: [studentId], onDelete: Cascade)
   class   Class   @relation(fields: [classId], references: [classId], onDelete: Cascade)
