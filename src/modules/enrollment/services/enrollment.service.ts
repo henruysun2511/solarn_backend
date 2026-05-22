@@ -33,4 +33,8 @@ export class EnrollmentService {
   findActiveEnrollmentsByCourseId(courseId: string) {
     return this.enrollmentRepo.findActiveEnrollmentsByCourseId(courseId);
   }
+
+  findActiveEnrollmentsByStudentId(studentId: string) {
+    return this.enrollmentRepo.findActiveEnrollmentsByStudentId(studentId);
+  }
 }

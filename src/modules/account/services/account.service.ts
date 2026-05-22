@@ -20,6 +20,10 @@ export class AccountService {
     return paginate(data, total, query);
   }
 
+  findById(accountId: string) {
+    return this.accountRepo.findById(accountId);
+  }
+
   async create(accountDto: CreateAccountDto) {
     if (accountDto.password !== accountDto.passwordConfirm) {
       throw new BadRequestException('Password confirmation does not match');

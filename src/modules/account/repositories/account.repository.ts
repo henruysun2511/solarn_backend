@@ -10,6 +10,10 @@ import { AccountSearchDto } from '../dtos';
 export class AccountRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  findById(accountId: string): Promise<Account | null> {
+    return this.prisma.account.findUnique({ where: { accountId } });
+  }
+
   async findMany(query: AccountSearchDto) {
     const { page, limit, search, sortBy, sortOrder, roleId, username } = query;
     return this.prisma.account.findMany({

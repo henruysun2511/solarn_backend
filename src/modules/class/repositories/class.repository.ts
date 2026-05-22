@@ -6,6 +6,7 @@ import { ClassSearchByCourseDto, ClassSearchByDto, ClassSearchByStudentDto, Clas
 
 interface CreateClassData {
   classData: {
+    classCode: string;
     startDate: Date;
     maxStudents: number;
     courseId: string;
@@ -209,6 +210,7 @@ export class ClassRepository {
     return this.prisma.$transaction(async (tx) => {
       const createdClass = await tx.class.create({
         data: {
+          classCode: data.classData.classCode,
           startDate: data.classData.startDate,
           maxStudents: data.classData.maxStudents,
           course: {
@@ -334,6 +336,7 @@ export class ClassRepository {
       take: limit,
       select: {
         classId: true,
+        classCode: true,
         maxStudents: true,
         startDate: true,
         roomCode: true,

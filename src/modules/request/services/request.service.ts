@@ -370,10 +370,6 @@ export class RequestService {
    * - isSuccess=true: cập nhật Salary.totalAmount theo proposedAmount + APPROVED request (cùng transaction)
    */
   async processSalaryComplaint(requestId: string, user: IAccountRequest, dto: ProcessSalaryComplaintDto) {
-    if (user.roleName !== AppConfig.ROLE.ADMIN) {
-      throw new ForbiddenException('Chỉ ADMIN mới được xử lý khiếu nại lương');
-    }
-
     return this.requestRepo.processSalaryComplaintRequest({
       requestId,
       approverAccountId: user.accountId,
@@ -388,10 +384,6 @@ export class RequestService {
    * - Nếu `isSuccess = false`: reject request.
    */
   async processScheduleChange(requestId: string, approver: IAccountRequest, dto: ProcessScheduleChangeDto) {
-    if (approver.roleName !== AppConfig.ROLE.ADMIN) {
-      throw new ForbiddenException('Chỉ ADMIN mới được xử lý yêu cầu đổi lịch');
-    }
-
     return this.requestRepo.processScheduleChangeRequest({
       requestId,
       approverAccountId: approver.accountId,
@@ -406,10 +398,6 @@ export class RequestService {
    * - Nếu `isSuccess = false`: reject request.
    */
   async processTransferRequest(requestId: string, approver: IAccountRequest, dto: ProcessTransferRequestDto) {
-    if (approver.roleName !== AppConfig.ROLE.ADMIN) {
-      throw new ForbiddenException('Chỉ ADMIN mới được xử lý yêu cầu chuyển lớp');
-    }
-
     return this.requestRepo.processTransferRequest({
       requestId,
       approverAccountId: approver.accountId,

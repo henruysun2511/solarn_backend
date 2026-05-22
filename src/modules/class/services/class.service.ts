@@ -16,7 +16,7 @@ import {
   CreateClassDto
 } from '../dtos';
 import { ClassRepository } from '../repositories/class.repository';
-import { generateScheduleSessions, normalizeDate, parseWeekdays } from '../utils';
+import { generateClassCode, generateScheduleSessions, normalizeDate, parseWeekdays } from '../utils';
 
 @Injectable()
 export class ClassService {
@@ -93,20 +93,35 @@ export class ClassService {
     }
 
     // Nếu không có xung đột, tạo class và các sessions trong transaction
-    return this.classRepo.create({
-      classData: {
-        roomCode: dto.roomCode,
-        startDate,
-        maxStudents: dto.maxStudents,
-        courseId: dto.courseId,
-        teacherId: dto.teacherId,
-        scheduleTemplateId: dto.scheduleTemplateId
-      },
-      sessions: sessions.map((session) => ({
-        shiftCode: session.shiftCode,
-        studyDate: session.studyDate
-      }))
-    });
+    // classCode: CHAR(7) theo format SEGxxxx
+    const maxAttempts = 5;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        return await this.classRepo.create({
+          classData: {
+            classCode: generateClassCode('SEG'),
+            roomCode: dto.roomCode,
+            startDate,
+            maxStudents: dto.maxStudents,
+            courseId: dto.courseId,
+            teacherId: dto.teacherId,
+            scheduleTemplateId: dto.scheduleTemplateId
+          },
+          sessions: sessions.map((session) => ({
+            shiftCode: session.shiftCode,
+            studyDate: session.studyDate
+          }))
+        });
+      } catch (error) {
+        // Nếu có unique constraint cho class_code trong tương lai, retry để tránh trùng
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+          if (attempt < maxAttempts) continue;
+        }
+        throw error;
+      }
+    }
+
+    throw new ConflictException('Không thể tạo classCode hợp lệ');
   }
 
   async addStudentToClass(classId: string, studentId: string) {
