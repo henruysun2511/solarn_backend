@@ -112,6 +112,7 @@ export class CourseController {
     bodyType: UpdateCourseDto,
     status: 200
   })
+  @Public()
   @Put(':courseId')
   @ResponseMessage('Sửa khóa học thành công')
   async update(@Param('courseId') courseId: string, @Body() dto: UpdateCourseDto) {

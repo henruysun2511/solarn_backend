@@ -39,6 +39,7 @@ export class ScheduleSessionController {
   @ApiQuery({ name: 'studyDate', required: false, type: String })
   @ApiQuery({ name: 'sortOrder', required: false, enum: SortOrder })
   @ApiQuery({ name: 'sortBy', required: false, enum: Object.values(ScheduleSessionSortBy) })
+  @Public()
   @Get('class/:classId')
   @ResponseMessage('Lấy danh sách buổi học thành công')
   findAllByClassId(@Param('classId') classId: string, @Query() query: ScheduleSessionClassSearchDto) {

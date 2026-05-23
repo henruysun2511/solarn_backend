@@ -57,7 +57,7 @@ export class FeedbackRepository {
       include: {
         student: {
           include: {
-            profile: { select: { fullName: true, avatarUrl: true } }
+            profile: { select: { fullName: true, avatarUrl: true, gender: true } }
           }
         }
       }
@@ -80,7 +80,7 @@ export class FeedbackRepository {
       include: {
         student: {
           include: {
-            profile: { select: { fullName: true, avatarUrl: true } }
+            profile: { select: { fullName: true, avatarUrl: true, gender: true } }
           }
         },
         class: {

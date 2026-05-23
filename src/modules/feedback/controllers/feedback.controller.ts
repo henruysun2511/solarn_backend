@@ -44,6 +44,7 @@ export class FeedbackController {
     enum: Object.values(FeedbackClassSortBy),
     description: 'Sort field for feedbacks.'
   })
+  @Public()
   @Get('class/:classId')
   @ResponseMessage('Lấy danh sách feedback theo lớp thành công')
   async findAllByClassId(@Param('classId') classId: string, @Query() query: FeedbackClassSearchDto) {
@@ -116,6 +117,7 @@ export class FeedbackController {
   @ApiQuery({ name: 'isFeatured', required: false, type: String, description: 'Filter by isFeatured (true/false)' })
   @ApiQuery({ name: 'sortOrder', required: false, enum: SortOrder })
   @Get()
+  @Public()
   @ResponseMessage('Lấy danh sách feedback thành công')
   async findAll(@Query() query: FeedbackSearchDto) {
     return this.feedbackService.findAll(query);
