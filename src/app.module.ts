@@ -17,6 +17,7 @@ import { StudyShiftModule } from 'modules/study-shift/study-shift.module';
 import { SharedModule } from 'shared/shared.module';
 import { CourseResourceModule } from 'modules/course-resource/course-resource.module';
 import { DashboardModule } from 'modules/dashboard/dashboard.module';
+import { EnrollmentModule } from 'modules/enrollment/enrollment.module';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -49,7 +50,8 @@ import { PrismaModule } from './prisma/prisma.module';
     InvoiceModule,
     SharedModule,
     CourseResourceModule,
-    DashboardModule
+    DashboardModule,
+    EnrollmentModule
   ],
 
   controllers: [AppController],

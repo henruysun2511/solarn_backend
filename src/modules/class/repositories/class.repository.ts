@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { AttendanceStatus, ClassSessionStatus, Prisma } from '@prisma/client';
 import { PrismaService } from 'prisma/prisma.service';
 
-import { ClassSearchByCourseDto, ClassSearchByTeacherDto } from '../dtos';
+import { ClassSearchByCourseDto, ClassSearchByDto, ClassSearchByStudentDto, ClassSearchByTeacherDto } from '../dtos';
 
 interface CreateClassData {
   classData: {
@@ -248,6 +248,67 @@ export class ClassRepository {
     });
   }
 
+  private buildAllWhere(query: ClassSearchByDto): Prisma.ClassWhereInput {
+    const { search } = query;
+    return {
+      ...(search && {
+        OR: [
+          { roomCode: { contains: search.trim(), mode: 'insensitive' } },
+          { course: { courseName: { contains: search.trim(), mode: 'insensitive' } } }
+        ]
+      })
+    };
+  }
+
+  async findMany(query: ClassSearchByDto) {
+    const { skip, limit, sortBy, sortOrder } = query;
+    return this.prisma.class.findMany({
+      where: this.buildAllWhere(query),
+      orderBy: { [sortBy]: sortOrder },
+      skip,
+      take: limit,
+      select: {
+        classId: true,
+        maxStudents: true,
+        startDate: true,
+        roomCode: true,
+        _count: { select: { enrollments: true } },
+        course: {
+          select: {
+            courseId: true,
+            courseName: true
+          }
+        },
+        scheduleTemplate: {
+          select: {
+            templateId: true,
+            templateName: true,
+            weekdays: true,
+            shiftCode: true
+          }
+        },
+        teacher: {
+          select: {
+            teacherId: true,
+            teacherCode: true,
+            profile: {
+              select: {
+                fullName: true,
+                avatarUrl: true
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  async countAll(query: ClassSearchByDto): Promise<number> {
+    return this.prisma.class.count({
+      where: this.buildAllWhere(query)
+    });
+  }
+
   private buildWhere(courseId: string, query: ClassSearchByCourseDto): Prisma.ClassWhereInput {
     const { search } = query;
 
@@ -382,6 +443,90 @@ export class ClassRepository {
   async countByTeacherId(teacherId: string, query: ClassSearchByTeacherDto): Promise<number> {
     return this.prisma.class.count({
       where: this.buildTeacherWhere(teacherId, query)
+    });
+  }
+
+  private buildStudentWhere(studentId: string, query: ClassSearchByStudentDto): Prisma.ClassWhereInput {
+    const { search } = query;
+    return {
+      enrollments: { some: { studentId } },
+      ...(search && {
+        classId: this.isValidUuid(search.trim()) ? search.trim() : undefined
+      })
+    };
+  }
+
+  async findManyByStudentId(studentId: string, query: ClassSearchByStudentDto) {
+    const { skip, limit, sortBy, sortOrder } = query;
+    const where = this.buildStudentWhere(studentId, query);
+
+    const classes = await this.prisma.class.findMany({
+      where,
+      orderBy: { [sortBy]: sortOrder },
+      skip,
+      take: limit,
+      select: {
+        classId: true,
+        maxStudents: true,
+        startDate: true,
+        roomCode: true,
+        _count: {
+          select: { enrollments: true }
+        },
+        course: {
+          select: {
+            courseId: true,
+            courseName: true
+          }
+        },
+        scheduleTemplate: {
+          select: {
+            templateId: true,
+            templateName: true,
+            weekdays: true,
+            shiftCode: true
+          }
+        },
+        teacher: {
+          select: {
+            teacherId: true,
+            teacherCode: true,
+            profile: {
+              select: {
+                fullName: true,
+                avatarUrl: true
+              }
+            }
+          }
+        },
+        room: {
+          select: {
+            roomCode: true
+          }
+        }
+      }
+    });
+
+    // Fetch enrollmentIds for this student in these classes
+    const classIds = classes.map((c) => c.classId);
+    const enrollments =
+      classIds.length > 0
+        ? await this.prisma.enrollment.findMany({
+            where: { studentId, classId: { in: classIds } },
+            select: { classId: true, enrollmentId: true }
+          })
+        : [];
+    const enrollmentMap = new Map(enrollments.map((e) => [e.classId, e.enrollmentId]));
+
+    return classes.map((c) => ({
+      ...c,
+      enrollmentId: enrollmentMap.get(c.classId) ?? null
+    }));
+  }
+
+  async countByStudentId(studentId: string, query: ClassSearchByStudentDto): Promise<number> {
+    return this.prisma.class.count({
+      where: this.buildStudentWhere(studentId, query)
     });
   }
 }

@@ -1,8 +1,11 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { AttendanceStatus } from '@prisma/client';
 import { AttendanceService } from 'modules/attendance/services/attendance.service';
 import { EnrollmentService } from 'modules/enrollment/services/enrollment.service';
 import { ScheduleSessionService } from 'modules/schedule-session/services/schedule-session.service';
-import { AttendanceStatus } from '@prisma/client';
+import { StudentService } from 'modules/student/services/student.service';
+import { TeacherService } from 'modules/teacher/services/teacher.service';
+import { PrismaService } from 'prisma/prisma.service';
 
 import { CourseRepository } from '../repositories/course.repository';
 
@@ -12,7 +15,10 @@ export class CourseProgressService {
     private readonly courseRepo: CourseRepository,
     private readonly attendanceService: AttendanceService,
     private readonly enrollmentService: EnrollmentService,
-    private readonly scheduleSessionService: ScheduleSessionService
+    private readonly scheduleSessionService: ScheduleSessionService,
+    private readonly studentService: StudentService,
+    private readonly teacherService: TeacherService,
+    private readonly prisma: PrismaService
   ) {}
 
   /**
@@ -106,5 +112,126 @@ export class CourseProgressService {
       totalSessions: course.totalSessions,
       students
     };
+  }
+
+  async findMyStudentProgress(accountId: string) {
+    const student = await this.studentService.findByAccountId(accountId);
+    if (!student) throw new NotFoundException('Không tìm thấy học sinh');
+
+    const { studentId } = student;
+
+    const enrollments = await this.enrollmentService.findActiveEnrollmentsByStudentId(studentId);
+    if (enrollments.length === 0) return [];
+
+    const classIds = enrollments.map((e) => e.classId);
+
+    const [sessionStatsByClassId, attendances] = await Promise.all([
+      this.scheduleSessionService.getClassProgressStatsMap(classIds),
+      this.attendanceService.findEndedAttendancesForProgress([studentId], classIds)
+    ]);
+
+    const attendanceCountMap = new Map<string, { attended: number; absent: number }>();
+    for (const row of attendances) {
+      const classId = row.session.classId;
+      const key = `${row.studentId}:${classId}`;
+      const current = attendanceCountMap.get(key) ?? { attended: 0, absent: 0 };
+      if (row.status === AttendanceStatus.ABSENT) {
+        attendanceCountMap.set(key, { ...current, absent: current.absent + 1 });
+      } else {
+        attendanceCountMap.set(key, { ...current, attended: current.attended + 1 });
+      }
+    }
+
+    return enrollments.map((enrollment) => {
+      const stats = sessionStatsByClassId.get(enrollment.classId) ?? { total: 0, ended: 0 };
+      const key = `${studentId}:${enrollment.classId}`;
+      const counts = attendanceCountMap.get(key) ?? { attended: 0, absent: 0 };
+
+      const marked = counts.attended + counts.absent;
+      const unmarked = Math.max(0, stats.ended - marked);
+      const progressPercent = stats.total === 0 ? 0 : Math.round((stats.ended / stats.total) * 10000) / 100;
+
+      return {
+        classId: enrollment.class.classId,
+        roomCode: enrollment.class.roomCode,
+        courseName: enrollment.class.course?.courseName ?? '',
+        courseId: enrollment.class.course?.courseId ?? '',
+        totalSessions: enrollment.class.course?.totalSessions ?? stats.total,
+        endedSessions: stats.ended,
+        attendedSessions: counts.attended,
+        absentSessions: counts.absent,
+        unmarkedSessions: unmarked,
+        progressPercent
+      };
+    });
+  }
+
+  async getTeacherProgressList(accountId: string, classId?: string) {
+    const teacher = await this.teacherService.findTeacherByAccountId(accountId);
+    if (!teacher) throw new NotFoundException('Không tìm thấy giáo viên');
+
+    const { teacherId } = teacher;
+
+    // Get teacher's classes
+    const classes = await this.prisma.class.findMany({
+      where: {
+        teacherId,
+        ...(classId && { classId })
+      },
+      select: { classId: true, roomCode: true }
+    });
+
+    if (classes.length === 0) return [];
+
+    const classIds = classes.map((c) => c.classId);
+
+    const enrollments = await this.enrollmentService.findActiveEnrollmentsByClassIds(classIds);
+    if (enrollments.length === 0) return [];
+
+    const studentIds = Array.from(new Set(enrollments.map((e) => e.studentId)));
+
+    const [sessionStatsByClassId, attendances] = await Promise.all([
+      this.scheduleSessionService.getClassProgressStatsMap(classIds),
+      this.attendanceService.findEndedAttendancesForProgress(studentIds, classIds)
+    ]);
+
+    const attendanceCountMap = new Map<string, { attended: number; absent: number }>();
+    for (const row of attendances) {
+      const classId = row.session.classId;
+      const key = `${row.studentId}:${classId}`;
+      const current = attendanceCountMap.get(key) ?? { attended: 0, absent: 0 };
+      if (row.status === AttendanceStatus.ABSENT) {
+        attendanceCountMap.set(key, { ...current, absent: current.absent + 1 });
+      } else {
+        attendanceCountMap.set(key, { ...current, attended: current.attended + 1 });
+      }
+    }
+
+    return enrollments.map((enrollment) => {
+      const stats = sessionStatsByClassId.get(enrollment.classId) ?? { total: 0, ended: 0 };
+      const key = `${enrollment.studentId}:${enrollment.classId}`;
+      const counts = attendanceCountMap.get(key) ?? { attended: 0, absent: 0 };
+
+      const marked = counts.attended + counts.absent;
+      const unmarked = Math.max(0, stats.ended - marked);
+      const progressPercent = stats.total === 0 ? 0 : Math.round((stats.ended / stats.total) * 10000) / 100;
+
+      return {
+        studentId: enrollment.student.studentId,
+        studentCode: enrollment.student.studentCode,
+        fullName: enrollment.student.profile?.fullName ?? null,
+        email: enrollment.student.profile?.email ?? null,
+        phone: enrollment.student.profile?.phone ?? null,
+        classId: enrollment.class.classId,
+        roomCode: enrollment.class.roomCode,
+        courseName: enrollment.class.course?.courseName ?? '',
+        totalSessions: enrollment.class.course?.totalSessions ?? stats.total,
+        endedSessions: stats.ended,
+        attendedSessions: counts.attended,
+        absentSessions: counts.absent,
+        unmarkedSessions: unmarked,
+        progressPercent
+      };
+    });
   }
 }

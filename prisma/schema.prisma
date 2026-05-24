@@ -452,6 +452,8 @@ model Feedback {
 
   starRating Int @map("star_rating")
 
+  isFeatured Boolean @default(false) @map("is_featured")
+
   createdAt DateTime @default(now()) @map("created_at")
 
   student Student @relation(fields: [studentId], references: [studentId], onDelete: Cascade)
@@ -558,6 +560,7 @@ model Invoice {
   classId       String        @map("class_id")
   amount        Decimal       @map("amount") @db.Decimal(12, 2)
   status        InvoiceStatus @default(PENDING) @map("status")
+  createdAt     DateTime      @default(now()) @map("created_at")
   transactionId String        @unique @map("transaction_id")
 
   student Student @relation(fields: [studentId], references: [studentId], onDelete: Cascade)

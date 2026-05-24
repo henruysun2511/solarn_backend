@@ -5,7 +5,14 @@ import { SortOrder } from 'common/enums';
 import { IAccountRequest } from 'common/interfaces';
 import { SwaggerDoc } from 'common/swagger';
 
-import { AddStudentToClassDto, ClassSearchByCourseDto, ClassSearchByTeacherDto, CreateClassDto } from '../dtos';
+import {
+  AddStudentToClassDto,
+  ClassSearchByCourseDto,
+  ClassSearchByDto,
+  ClassSearchByStudentDto,
+  ClassSearchByTeacherDto,
+  CreateClassDto
+} from '../dtos';
 import { ClassSortBy } from '../enums/class-sort-by.enum';
 import { ClassService } from '../services/class.service';
 
@@ -19,6 +26,7 @@ export class ClassController {
     bodyType: CreateClassDto,
     status: 201
   })
+  @Public()
   @Post('')
   @ResponseMessage('Tạo lớp thành công')
   async create(@Body() dto: CreateClassDto) {
@@ -90,6 +98,66 @@ export class ClassController {
   @ResponseMessage('Lấy danh sách lớp của tôi thành công')
   async findMyClasses(@User() user: IAccountRequest, @Query() query: ClassSearchByTeacherDto) {
     return this.classService.findMyClasses(user.accountId, query);
+  }
+
+  @SwaggerDoc({
+    summary: 'Get My Enrolled Classes (Student)',
+    description: 'Retrieve classes that the authenticated student is enrolled in, with pagination.',
+    status: 200
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
+  @ApiQuery({ name: 'search', required: false, type: String, description: 'Tìm kiếm theo classId' })
+  @ApiQuery({
+    name: 'sortOrder',
+    required: false,
+    enum: SortOrder,
+    description: 'Sort order (desc or asc).',
+    example: SortOrder.DESC
+  })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    enum: Object.values(ClassSortBy),
+    description: 'Sort field for classes.'
+  })
+  @Get('my-enrolled-classes')
+  @ResponseMessage('Lấy danh sách lớp đã đăng ký thành công')
+  async findMyEnrolledClasses(@User() user: IAccountRequest, @Query() query: ClassSearchByStudentDto) {
+    return this.classService.findMyEnrolledClasses(user.accountId, query);
+  }
+
+  @SwaggerDoc({
+    summary: 'Get Class Detail',
+    description: 'Retrieve detailed information of a class by classId, including attendance statistics.',
+    status: 200
+  })
+  @SwaggerDoc({
+    summary: 'Get All Classes',
+    description: 'Retrieve all classes with pagination.',
+    status: 200
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
+  @ApiQuery({ name: 'search', required: false, type: String, description: 'Tìm kiếm theo classId' })
+  @ApiQuery({
+    name: 'sortOrder',
+    required: false,
+    enum: SortOrder,
+    description: 'Sort order (desc or asc).',
+    example: SortOrder.DESC
+  })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    enum: Object.values(ClassSortBy),
+    description: 'Sort field for classes.'
+  })
+  @Public()
+  @Get('')
+  @ResponseMessage('Lấy danh sách lớp học thành công')
+  async findAll(@Query() query: ClassSearchByDto) {
+    return this.classService.findAll(query);
   }
 
   @SwaggerDoc({
