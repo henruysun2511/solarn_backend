@@ -23,4 +23,12 @@ export class NotificationRepository {
       }
     });
   }
+
+  async findByAccountId(accountId: string): Promise<Notification[]> {
+    return this.prisma.notification.findMany({
+      where: { accountId },
+      orderBy: { createdAt: 'desc' },
+      take: 20
+    });
+  }
 }
