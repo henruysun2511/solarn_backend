@@ -61,6 +61,13 @@ enum InvoiceStatus {
   CANCELLED
 }
 
+enum NotificationType {
+  SYSTEM
+  REQUEST
+  SCHEDULE
+  PAYMENT
+}
+
 enum OtpPurpose {
   REGISTER
 }
@@ -204,6 +211,7 @@ model Account {
   createdAt       DateTime         @default(now()) @map("created_at")
   profile         Profile?
   supportRequests SupportRequest[]
+  notifications   Notification[]
 
   sentRequests     Request[] @relation("RequestSentBy")
   approvedRequests Request[] @relation("RequestApprovedBy")
@@ -478,6 +486,23 @@ model SupportRequest {
   @@index([accountId])
   @@index([status])
   @@map("support_requests")
+}
+
+model Notification {
+  notificationId String           @id @default(uuid()) @map("notification_id")
+  accountId      String           @map("account_id")
+  title          String           @map("title") @db.VarChar(255)
+  content        String           @map("content") @db.Text
+  type           NotificationType @default(SYSTEM) @map("type")
+  metadata       Json?            @map("metadata")
+  createdAt      DateTime         @default(now()) @map("created_at")
+
+  account Account @relation(fields: [accountId], references: [accountId], onDelete: Cascade)
+
+  @@index([accountId])
+  @@index([type])
+  @@index([createdAt(sort: Desc)])
+  @@map("notifications")
 }
 
 model Request {

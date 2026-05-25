@@ -8,6 +8,13 @@ import { StudyShiftSearchDto, UpdateStudyShiftDto } from '../dtos';
 export class StudyShiftRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  findByCode(shiftCode: string) {
+    return this.prisma.studyShift.findUnique({
+      where: { shiftCode },
+      select: { shiftCode: true, shiftName: true, timeRange: true }
+    });
+  }
+
   private buildWhere(query: StudyShiftSearchDto): Prisma.StudyShiftWhereInput {
     const { search, timeRange } = query;
 

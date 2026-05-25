@@ -32,6 +32,13 @@ export class EnrollmentService {
     return new Set(pairs.map((p) => `${p.studentId}:${p.classId}`));
   }
 
+  async getEnrollmentStatusMap(studentIds: string[], classIds: string[]): Promise<Map<string, EnrollmentStatus>> {
+    if (studentIds.length === 0 || classIds.length === 0) return new Map();
+
+    const rows = await this.enrollmentRepo.findStudentClassStatusPairs(studentIds, classIds);
+    return new Map(rows.map((r) => [`${r.studentId}:${r.classId}`, r.status] as const));
+  }
+
   findActiveEnrollmentsByCourseId(courseId: string) {
     return this.enrollmentRepo.findActiveEnrollmentsByCourseId(courseId);
   }

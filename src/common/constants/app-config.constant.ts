@@ -1,3 +1,5 @@
+import { env } from 'config';
+
 export const AppConfig = {
   STAGES: {
     DEV: 'dev',
@@ -30,7 +32,7 @@ export const AppConfig = {
   },
 
   CORS: {
-    ORIGINS: process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : 'http://localhost:3001',
+    ORIGINS: env.CORS_ORIGINS ? env.CORS_ORIGINS.split(',') : 'http://localhost:3001',
     METHODS: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     CREDENTIALS: true
   }

@@ -10,5 +10,9 @@ export const ATTENDANCE_ERRORS = {
   STUDENT_NOT_IN_CLASS: {
     message: 'Học sinh không thuộc lớp của buổi học',
     reason: 'STUDENT_NOT_IN_CLASS' as const
+  },
+  ENROLLMENT_NOT_IN_PROGRESS: {
+    message: 'Chỉ được điểm danh cho học sinh đang học lớp này',
+    reason: 'ENROLLMENT_NOT_IN_PROGRESS' as const
   }
 } as const;

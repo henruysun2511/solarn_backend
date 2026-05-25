@@ -6,6 +6,7 @@ import { StudyShiftRepository } from './repositories/study-shift.repository';
 
 @Module({
   controllers: [StudyShiftController],
-  providers: [StudyShiftService, StudyShiftRepository]
+  providers: [StudyShiftService, StudyShiftRepository],
+  exports: [StudyShiftService]
 })
 export class StudyShiftModule {}

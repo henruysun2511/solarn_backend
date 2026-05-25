@@ -34,6 +34,13 @@ interface RoomSessionConflict {
 export class ClassRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  findInfoForSessionCreate(classId: string) {
+    return this.prisma.class.findUnique({
+      where: { classId },
+      select: { classId: true, teacherId: true, roomCode: true }
+    });
+  }
+
   findById(classId: string) {
     return this.prisma.class.findUnique({
       where: { classId },

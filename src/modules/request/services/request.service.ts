@@ -1,11 +1,12 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable } from '@nestjs/common';
-import { RequestStatus } from '@prisma/client';
+import { NotificationType, RequestStatus } from '@prisma/client';
 import { TeacherService } from 'modules/teacher/services/teacher.service';
 import { SalaryService } from 'modules/salary/services/salary.service';
 import { StudentService } from 'modules/student/services/student.service';
 import { EnrollmentService } from 'modules/enrollment/services/enrollment.service';
 import { ClassService } from 'modules/class/services/class.service';
 import { ScheduleSessionService } from 'modules/schedule-session/services/schedule-session.service';
+import { NotificationService } from 'modules/notification/services/notification.service';
 import { AppConfig } from 'common/constants';
 import { IAccountRequest } from 'common/interfaces';
 import { paginate } from 'shared/helpers';
@@ -37,7 +38,8 @@ export class RequestService {
     private readonly studentService: StudentService,
     private readonly enrollmentService: EnrollmentService,
     private readonly classService: ClassService,
-    private readonly scheduleSessionService: ScheduleSessionService
+    private readonly scheduleSessionService: ScheduleSessionService,
+    private readonly notificationService: NotificationService
   ) {}
 
   /**
@@ -357,11 +359,27 @@ export class RequestService {
       throw new ConflictException('Yêu cầu đã được xử lý');
     }
 
-    return this.requestRepo.approveRequest({
+    const updatedRequest = await this.requestRepo.approveRequest({
       requestId,
       approverAccountId: approver.accountId,
       approvalNote: dto.approvalNote
     });
+
+    await this.notificationService.create(request.senderAccountId, {
+      type: NotificationType.REQUEST,
+      title: 'Yêu cầu của bạn đã được phê duyệt',
+      content: dto.approvalNote
+        ? `Yêu cầu (${request.type}) đã được phê duyệt. Ghi chú: ${dto.approvalNote}`
+        : `Yêu cầu (${request.type}) đã được phê duyệt.`,
+      metadata: {
+        requestId: request.requestId,
+        type: request.type,
+        status: RequestStatus.APPROVED,
+        approverAccountId: approver.accountId
+      }
+    });
+
+    return updatedRequest;
   }
 
   /**

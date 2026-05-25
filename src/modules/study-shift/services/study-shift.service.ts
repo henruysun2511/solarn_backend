@@ -8,6 +8,10 @@ import { StudyShiftRepository } from '../repositories/study-shift.repository';
 export class StudyShiftService {
   constructor(private readonly studyShiftRepo: StudyShiftRepository) {}
 
+  findByCode(shiftCode: string) {
+    return this.studyShiftRepo.findByCode(shiftCode);
+  }
+
   async create(studyShiftDto: CreateStudyShiftDto) {
     return this.studyShiftRepo.create(studyShiftDto);
   }

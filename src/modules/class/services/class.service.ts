@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
+import { BadRequestException, ConflictException, forwardRef, Inject, Injectable } from '@nestjs/common';
 import { EnrollmentStatus, Prisma } from '@prisma/client';
 import { CourseService } from 'modules/course/services/course.service';
 import { EnrollmentService } from 'modules/enrollment/services/enrollment.service';
@@ -24,6 +24,7 @@ export class ClassService {
     private readonly classRepo: ClassRepository,
     private readonly courseService: CourseService,
     private readonly scheduleTemplateService: ScheduleTemplateService,
+    @Inject(forwardRef(() => ScheduleSessionService))
     private readonly scheduleSessionService: ScheduleSessionService,
     private readonly enrollmentService: EnrollmentService,
     private readonly teacherService: TeacherService,
@@ -245,5 +246,16 @@ export class ClassService {
     });
 
     return paginate(data, total, query);
+  }
+
+  getInfoForSessionCreate(classId: string): Promise<{ classId: string; teacherId: string; roomCode: string } | null> {
+    return this.classRepo.findInfoForSessionCreate(classId);
+  }
+
+  findRoomConflictsForSession(
+    roomCode: string,
+    session: { shiftCode: string; studyDate: Date }
+  ): Promise<Array<{ classId: string; session: { shiftCode: string; studyDate: Date } }>> {
+    return this.classRepo.findRoomSessionConflicts(roomCode, [session]);
   }
 }

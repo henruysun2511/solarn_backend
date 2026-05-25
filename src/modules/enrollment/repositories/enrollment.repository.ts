@@ -66,6 +66,16 @@ export class EnrollmentRepository {
     });
   }
 
+  findStudentClassStatusPairs(studentIds: string[], classIds: string[]) {
+    return this.prisma.enrollment.findMany({
+      where: {
+        studentId: { in: studentIds },
+        classId: { in: classIds }
+      },
+      select: { studentId: true, classId: true, status: true }
+    });
+  }
+
   findActiveEnrollmentsByCourseId(courseId: string) {
     return this.prisma.enrollment.findMany({
       where: {

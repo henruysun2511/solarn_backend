@@ -9,6 +9,43 @@ import { ScheduleSessionSearchDto } from '../dtos/schedule-session.search.dto';
 export class ScheduleSessionRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  findDuplicateInClass(classId: string, shiftCode: string, studyDate: Date) {
+    return this.prisma.scheduleSession.findFirst({
+      where: { classId, shiftCode, studyDate },
+      select: { sessionId: true }
+    });
+  }
+
+  findTeacherConflict(teacherId: string, classId: string, shiftCode: string, studyDate: Date) {
+    return this.prisma.scheduleSession.findFirst({
+      where: {
+        shiftCode,
+        studyDate,
+        class: { teacherId },
+        NOT: { classId }
+      },
+      select: { sessionId: true, classId: true, shiftCode: true, studyDate: true }
+    });
+  }
+
+  createOne(classId: string, shiftCode: string, studyDate: Date) {
+    return this.prisma.scheduleSession.create({
+      data: {
+        classId,
+        shiftCode,
+        studyDate
+      },
+      select: {
+        sessionId: true,
+        classId: true,
+        shiftCode: true,
+        studyDate: true,
+        status: true,
+        shift: true
+      }
+    });
+  }
+
   findTeacherSessionConflicts(teacherId: string, sessions: Array<{ shiftCode: string; studyDate: Date }>) {
     if (sessions.length === 0) return [];
 

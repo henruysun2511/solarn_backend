@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { EnrollmentModule } from 'modules/enrollment/enrollment.module';
 import { PrismaModule } from 'prisma/prisma.module';
 import { ScheduleSessionModule } from 'modules/schedule-session/schedule-session.module';
@@ -9,7 +9,7 @@ import { AttendanceController } from './controllers/attendance.controller';
 import { AttendanceRepository } from './repositories/attendance.repository';
 
 @Module({
-  imports: [PrismaModule, EnrollmentModule, ScheduleSessionModule, StudentModule],
+  imports: [PrismaModule, EnrollmentModule, forwardRef(() => ScheduleSessionModule), StudentModule],
   controllers: [AttendanceController],
   providers: [AttendanceService, AttendanceRepository],
   exports: [AttendanceService]

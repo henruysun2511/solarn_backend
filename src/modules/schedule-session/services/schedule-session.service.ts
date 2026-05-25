@@ -1,15 +1,29 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, ConflictException, forwardRef, Inject, Injectable } from '@nestjs/common';
 import { ClassSessionStatus } from '@prisma/client';
 import { paginate } from 'shared/helpers';
+import { StudyShiftService } from 'modules/study-shift/services/study-shift.service';
+import { ClassService } from 'modules/class/services/class.service';
 
 import { SCHEDULE_SESSION_ERRORS } from '../constants/schedule-session-errors.constant';
 import { ScheduleSessionRepository } from '../repositories/schedule-session.repository';
 import { ScheduleSessionClassSearchDto } from '../dtos/schedule-session-class-search.dto';
 import { ScheduleSessionSearchDto } from '../dtos/schedule-session.search.dto';
+import { CreateScheduleSessionDto } from '../dtos';
 
 @Injectable()
 export class ScheduleSessionService {
-  constructor(private readonly scheduleSessionRepo: ScheduleSessionRepository) {}
+  constructor(
+    private readonly scheduleSessionRepo: ScheduleSessionRepository,
+    private readonly studyShiftService: StudyShiftService,
+    @Inject(forwardRef(() => ClassService))
+    private readonly classService: ClassService
+  ) {}
+
+  /** Chuẩn hoá về DATE (UTC 00:00) để khớp field `studyDate` kiểu DATE trong DB. */
+  private normalizeDate(dateValue: string | Date): Date {
+    const date = new Date(dateValue);
+    return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  }
 
   /**
    * Nghiệp vụ: so sánh "cùng ngày" theo local timezone của server.
@@ -142,5 +156,68 @@ export class ScheduleSessionService {
     ]);
 
     return paginate(data, total, query);
+  }
+
+  /**
+   * Thêm 1 buổi học cho lớp.
+   * Rule:
+   * - Không được trùng (classId, shiftCode, studyDate)
+   * - Không được trùng lịch giáo viên với lớp khác (cùng ngày+ca)
+   * - Không được trùng phòng với lớp khác còn đang học (cùng ngày+ca)
+   */
+  async createOneForClass(classId: string, dto: CreateScheduleSessionDto) {
+    const classInfo = await this.classService.getInfoForSessionCreate(classId);
+    if (!classInfo) {
+      throw new BadRequestException('Lớp không tồn tại');
+    }
+
+    const shift = await this.studyShiftService.findByCode(dto.shiftCode);
+    if (!shift) {
+      throw new BadRequestException('Ca học không tồn tại');
+    }
+
+    const studyDate = this.normalizeDate(dto.studyDate);
+
+    const duplicate = await this.scheduleSessionRepo.findDuplicateInClass(classId, dto.shiftCode, studyDate);
+    if (duplicate) {
+      throw new ConflictException({
+        message: 'Buổi học đã tồn tại trong lớp',
+        reason: 'SCHEDULE_SESSION_DUPLICATE',
+        classId,
+        shiftCode: dto.shiftCode,
+        studyDate
+      });
+    }
+
+    const teacherConflict = await this.scheduleSessionRepo.findTeacherConflict(
+      classInfo.teacherId,
+      classId,
+      dto.shiftCode,
+      studyDate
+    );
+    if (teacherConflict) {
+      throw new ConflictException({
+        message: 'Giáo viên bị trùng lịch với lớp khác',
+        reason: 'TEACHER_SCHEDULE_CONFLICT',
+        teacherId: classInfo.teacherId,
+        conflict: teacherConflict
+      });
+    }
+
+    const roomConflicts = await this.classService.findRoomConflictsForSession(classInfo.roomCode, {
+      shiftCode: dto.shiftCode,
+      studyDate
+    });
+    const hasRoomConflict = roomConflicts.some((c) => c.classId !== classId);
+    if (hasRoomConflict) {
+      throw new ConflictException({
+        message: 'Phòng đang bị trùng lịch với lớp khác',
+        reason: 'CLASS_ROOM_SCHEDULE_CONFLICT',
+        roomCode: classInfo.roomCode,
+        conflicts: roomConflicts
+      });
+    }
+
+    return this.scheduleSessionRepo.createOne(classId, dto.shiftCode, studyDate);
   }
 }

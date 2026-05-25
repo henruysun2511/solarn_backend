@@ -1,4 +1,4 @@
-import { Body, Controller, Param, Patch } from '@nestjs/common';
+import { Body, Controller, Param, Patch, Post } from '@nestjs/common';
 import { Public, ResponseMessage } from 'common/decorators';
 import { SwaggerDoc } from 'common/swagger';
 import { ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
@@ -7,7 +7,7 @@ import { Query, Get } from '@nestjs/common';
 import { ClassSessionStatus } from '@prisma/client';
 
 import { ScheduleSessionService } from '../services/schedule-session.service';
-import { UpdateSessionStatusDto } from '../dtos';
+import { CreateScheduleSessionDto, UpdateSessionStatusDto } from '../dtos';
 import { ScheduleSessionClassSearchDto } from '../dtos/schedule-session-class-search.dto';
 import { ScheduleSessionSortBy } from '../enums/schedule-session-sort-by.enum';
 import { ScheduleSessionSearchDto } from '../dtos/schedule-session.search.dto';
@@ -16,6 +16,17 @@ import { ScheduleSessionSearchDto } from '../dtos/schedule-session.search.dto';
 @ApiBearerAuth()
 export class ScheduleSessionController {
   constructor(private readonly scheduleSessionService: ScheduleSessionService) {}
+
+  @SwaggerDoc({
+    summary: 'Thêm 1 buổi học cho lớp',
+    bodyType: CreateScheduleSessionDto,
+    status: 201
+  })
+  @Post('class/:classId')
+  @ResponseMessage('Thêm buổi học thành công')
+  createOneForClass(@Param('classId') classId: string, @Body() dto: CreateScheduleSessionDto) {
+    return this.scheduleSessionService.createOneForClass(classId, dto);
+  }
 
   // Nghiệp vụ: giáo viên cập nhật trạng thái buổi học (chỉ đúng ngày/giờ học mới được cập nhật).
   @SwaggerDoc({

@@ -18,6 +18,7 @@ import { SharedModule } from 'shared/shared.module';
 import { CourseResourceModule } from 'modules/course-resource/course-resource.module';
 import { DashboardModule } from 'modules/dashboard/dashboard.module';
 import { EnrollmentModule } from 'modules/enrollment/enrollment.module';
+import { NotificationModule } from 'modules/notification/notification.module';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -51,7 +52,8 @@ import { PrismaModule } from './prisma/prisma.module';
     SharedModule,
     CourseResourceModule,
     DashboardModule,
-    EnrollmentModule
+    EnrollmentModule,
+    NotificationModule
   ],
 
   controllers: [AppController],
