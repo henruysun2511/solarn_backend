@@ -15,7 +15,11 @@ export type CreateNotificationPayload = {
 export class NotificationService {
   constructor(private readonly notificationRepo: NotificationRepository) {}
 
-  async create(accountId: string, dto: CreateNotificationDto) {
-    return this.create(accountId, dto);
+  async create(accountId: string, dto: CreateNotificationPayload) {
+    return this.notificationRepo.create({ accountId, ...dto });
+  }
+
+  async findByAccountId(accountId: string) {
+    return this.notificationRepo.findByAccountId(accountId);
   }
 }

@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ResponseMessage, User } from 'common/decorators';
 import { IAccountRequest } from 'common/interfaces';
@@ -22,5 +22,16 @@ export class NotificationController {
   @ResponseMessage('Tạo thông báo thành công')
   async create(@User() user: IAccountRequest, @Body() dto: CreateNotificationDto) {
     return this.notificationService.create(user.accountId, dto);
+  }
+
+  @SwaggerDoc({
+    summary: 'Get my notifications',
+    description: 'Lấy danh sách thông báo của tài khoản đang đăng nhập.',
+    status: 200
+  })
+  @Get('')
+  @ResponseMessage('Lấy danh sách thông báo thành công')
+  async getMyNotifications(@User() user: IAccountRequest) {
+    return this.notificationService.findByAccountId(user.accountId);
   }
 }
