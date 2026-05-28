@@ -19,6 +19,7 @@ import { CourseResourceModule } from 'modules/course-resource/course-resource.mo
 import { DashboardModule } from 'modules/dashboard/dashboard.module';
 import { EnrollmentModule } from 'modules/enrollment/enrollment.module';
 import { NotificationModule } from 'modules/notification/notification.module';
+import { SettingModule } from 'modules/setting/setting.module';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -53,7 +54,8 @@ import { PrismaModule } from './prisma/prisma.module';
     CourseResourceModule,
     DashboardModule,
     EnrollmentModule,
-    NotificationModule
+    NotificationModule,
+    SettingModule
   ],
 
   controllers: [AppController],

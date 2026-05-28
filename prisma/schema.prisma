@@ -124,6 +124,16 @@ model Setting {
   settingId String   @id @default(uuid()) @map("setting_id")
   siteName  String   @map("site_name") @db.VarChar(255)
   logoUrl   String?  @map("logo_url") @db.Text
+
+  // ── THÔNG TIN LIÊN HỆ & CHÂN TRANG ──────────────────────
+  hotline   String?  @db.VarChar(20)
+  email     String?  @db.VarChar(255)
+  address   String?  @db.Text
+
+  // ── SEO CONFIGURATION ───────────────────────────────────
+  metaTitle       String? @map("meta_title") @db.VarChar(255)
+  metaDescription String? @map("meta_description") @db.Text
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
