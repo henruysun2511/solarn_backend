@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Attendance, AttendanceStatus, Prisma } from '@prisma/client';
+import { Attendance, AttendanceStatus, EnrollmentStatus, Prisma } from '@prisma/client';
 import { PrismaService } from 'prisma/prisma.service';
 
 import { MyAttendanceSearchDto } from '../dtos';
@@ -16,6 +16,22 @@ export interface AttendanceSummary {
   absent: number;
   late: number;
   total: number;
+}
+
+export interface AttendanceStudentRecord {
+  attendanceId: string | null;
+  studentId: string;
+  sessionId: string;
+  status: AttendanceStatus | null;
+  note: string | null;
+  student: {
+    studentCode: string;
+    profile: {
+      fullName: string | null;
+      email: string | null;
+      phone: string | null;
+    } | null;
+  };
 }
 
 @Injectable()
@@ -71,35 +87,52 @@ export class AttendanceRepository {
   }
 
   async findBySessionId(sessionId: string) {
-    const records = await this.prisma.attendance.findMany({
+    const session = await this.prisma.scheduleSession.findUnique({
       where: { sessionId },
-      include: {
-        student: {
-          include: {
-            profile: {
-              select: {
-                fullName: true,
-                email: true,
-                phone: true
+      select: { classId: true }
+    });
+
+    if (!session) {
+      return { records: [], summary: { present: 0, absent: 0, late: 0, total: 0 } };
+    }
+
+    const [enrollments, attendanceRecords] = await Promise.all([
+      this.prisma.enrollment.findMany({
+        where: {
+          classId: session.classId,
+          status: EnrollmentStatus.IN_PROGRESS
+        },
+        include: {
+          student: {
+            include: {
+              profile: {
+                select: { fullName: true, email: true, phone: true }
               }
             }
           }
-        }
-      },
-      orderBy: {
-        student: {
-          studentCode: 'asc'
-        }
-      }
+        },
+        orderBy: { student: { studentCode: 'asc' } }
+      }),
+      this.prisma.attendance.findMany({
+        where: { sessionId }
+      })
+    ]);
+
+    const attendanceMap = new Map(attendanceRecords.map((a) => [a.studentId, a]));
+
+    const records: AttendanceStudentRecord[] = enrollments.map((e) => {
+      const attendance = attendanceMap.get(e.studentId);
+      return {
+        attendanceId: attendance?.attendanceId ?? null,
+        studentId: e.studentId,
+        sessionId,
+        status: attendance?.status ?? null,
+        note: attendance?.note ?? null,
+        student: e.student
+      };
     });
 
-    const summary: AttendanceSummary = {
-      present: 0,
-      absent: 0,
-      late: 0,
-      total: records.length
-    };
-
+    const summary: AttendanceSummary = { present: 0, absent: 0, late: 0, total: records.length };
     for (const record of records) {
       if (record.status === AttendanceStatus.PRESENT) summary.present += 1;
       else if (record.status === AttendanceStatus.ABSENT) summary.absent += 1;

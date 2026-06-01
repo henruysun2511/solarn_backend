@@ -233,7 +233,20 @@ export class ScheduleSessionRepository {
       skip,
       take: limit,
       orderBy: { [sortBy]: sortOrder },
-      include: { shift: true }
+      include: {
+        shift: true,
+        class: {
+          select: {
+            classId: true,
+            room: {
+              select: {
+                roomId: true,
+                roomCode: true
+              }
+            }
+          }
+        }
+      }
     });
   }
 
