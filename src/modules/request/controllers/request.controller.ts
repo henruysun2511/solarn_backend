@@ -9,20 +9,24 @@ import { SwaggerDoc } from 'common/swagger';
 import {
   ApproveRequestDto,
   CreateLeaveRequestDto,
+  CreateReEnrollmentRequestDto,
   CreateSalaryComplaintDto,
   CreateScheduleChangeDto,
   CreateTransferRequestDto,
   LeaveRequestSearchDto,
   ProcessLeaveRequestDto,
+  ProcessReEnrollmentRequestDto,
   ProcessSalaryComplaintDto,
   ProcessScheduleChangeDto,
   ProcessTransferRequestDto,
+  ReEnrollmentRequestSearchDto,
   SalaryComplaintSearchDto,
   ScheduleChangeSearchDto,
   TransferRequestSearchDto
 } from '../dtos';
 import {
   LeaveRequestSortBy,
+  ReEnrollmentRequestSortBy,
   SalaryComplaintSortBy,
   ScheduleChangeSortBy,
   TransferRequestSortBy,
@@ -98,6 +102,28 @@ export class RequestController {
   }
 
   @SwaggerDoc({
+    summary: 'Lấy danh sách yêu cầu tái nhập học',
+    description: 'Retrieve re-enrollment requests with pagination, sorting, search and filters',
+    status: 200
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'status', required: false, enum: RequestStatus })
+  @ApiQuery({ name: 'senderAccountId', required: false, type: String })
+  @ApiQuery({ name: 'enrollmentId', required: false, type: String })
+  @ApiQuery({ name: 'fromClassId', required: false, type: String })
+  @ApiQuery({ name: 'toClassId', required: false, type: String })
+  @ApiQuery({ name: 'sortOrder', required: false, enum: SortOrder })
+  @ApiQuery({ name: 'sortBy', required: false, enum: Object.values(ReEnrollmentRequestSortBy) })
+  @Public()
+  @Get('re-enrollment')
+  @ResponseMessage('Lấy danh sách yêu cầu tái nhập học thành công')
+  async findAllReEnrollmentRequests(@Query() query: ReEnrollmentRequestSearchDto, @User() user?: IAccountRequest) {
+    return this.requestService.findAllReEnrollmentRequests(query, user);
+  }
+
+  @SwaggerDoc({
     summary: 'Lấy danh sách yêu cầu đổi lịch/ca học',
     description: 'Retrieve schedule change requests with pagination, sorting, search and filters',
     status: 200
@@ -147,6 +173,22 @@ export class RequestController {
   @ResponseMessage('Lấy danh sách yêu cầu bảo lưu của tôi thành công')
   async findMyLeaveRequests(@Query() query: LeaveRequestSearchDto, @User() user: IAccountRequest) {
     return this.requestService.findMyLeaveRequests(user.accountId, query);
+  }
+
+  @SwaggerDoc({
+    summary: 'Lấy danh sách yêu cầu tái nhập học của tôi',
+    description: 'Returns re-enrollment requests for the current authenticated user.',
+    status: 200
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'status', required: false, enum: RequestStatus })
+  @ApiQuery({ name: 'sortOrder', required: false, enum: SortOrder })
+  @ApiQuery({ name: 'sortBy', required: false, enum: Object.values(ReEnrollmentRequestSortBy) })
+  @Get('my-re-enrollment-requests')
+  @ResponseMessage('Lấy danh sách yêu cầu tái nhập học của tôi thành công')
+  async findMyReEnrollmentRequests(@Query() query: ReEnrollmentRequestSearchDto, @User() user: IAccountRequest) {
+    return this.requestService.findMyReEnrollmentRequests(user.accountId, query);
   }
 
   @SwaggerDoc({
@@ -215,6 +257,18 @@ export class RequestController {
   async createLeaveRequest(@User() user: IAccountRequest, @Body() dto: CreateLeaveRequestDto) {
     const accountId = user.accountId;
     return this.requestService.createLeaveRequest(accountId, dto);
+  }
+
+  @SwaggerDoc({
+    summary: 'Tạo request tái nhập học',
+    description: 'Học viên gửi yêu cầu tái nhập học từ enrollment đang bảo lưu',
+    bodyType: CreateReEnrollmentRequestDto,
+    status: 201
+  })
+  @Post('re-enrollment')
+  async createReEnrollmentRequest(@User() user: IAccountRequest, @Body() dto: CreateReEnrollmentRequestDto) {
+    const accountId = user.accountId;
+    return this.requestService.createReEnrollmentRequest(accountId, dto);
   }
 
   @SwaggerDoc({
@@ -322,6 +376,23 @@ export class RequestController {
     @Body() dto: ProcessLeaveRequestDto
   ) {
     return this.requestService.processLeaveRequest(requestId, user, dto);
+  }
+
+  @SwaggerDoc({
+    summary: 'Xử lý yêu cầu tái nhập học',
+    description:
+      'ADMIN xử lý request tái nhập học. Nếu duyệt sẽ tạo enrollment mới ở lớp được chọn và lưu lớp cũ/lớp mới trong request.',
+    bodyType: ProcessReEnrollmentRequestDto,
+    status: 200
+  })
+  @Patch('re-enrollment/:requestId/process')
+  @ResponseMessage('Xử lý yêu cầu tái nhập học thành công')
+  async processReEnrollmentRequest(
+    @Param('requestId') requestId: string,
+    @User() user: IAccountRequest,
+    @Body() dto: ProcessReEnrollmentRequestDto
+  ) {
+    return this.requestService.processReEnrollmentRequest(requestId, user, dto);
   }
 
   @SwaggerDoc({

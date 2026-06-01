@@ -13,6 +13,12 @@ export const TransferRequestSortBy = {
 
 export type TransferRequestSortBy = (typeof TransferRequestSortBy)[keyof typeof TransferRequestSortBy];
 
+export const ReEnrollmentRequestSortBy = {
+  CREATED_AT: 'createdAt'
+} as const;
+
+export type ReEnrollmentRequestSortBy = (typeof ReEnrollmentRequestSortBy)[keyof typeof ReEnrollmentRequestSortBy];
+
 export const SalaryComplaintSortBy = {
   CREATED_AT: 'createdAt',
   PROPOSED_AMOUNT: 'proposedAmount'

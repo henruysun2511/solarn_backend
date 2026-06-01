@@ -15,15 +15,18 @@ import { RequestRepository } from '../repositories/request.repository';
 import {
   ApproveRequestDto,
   CreateLeaveRequestDto,
+  CreateReEnrollmentRequestDto,
   CreateSalaryComplaintDto,
   CreateScheduleChangeDto,
   CreateTransferRequestDto,
   ProcessLeaveRequestDto,
+  ProcessReEnrollmentRequestDto,
   ProcessSalaryComplaintDto,
   ProcessScheduleChangeDto,
   ProcessTransferRequestDto,
   SalaryComplaintSearchDto,
   TransferRequestSearchDto,
+  ReEnrollmentRequestSearchDto,
   LeaveRequestSearchDto,
   ScheduleChangeSearchDto
 } from '../dtos';
@@ -178,6 +181,54 @@ export class RequestService {
   }
 
   /**
+   * Tạo request tái nhập học từ enrollment đang bảo lưu.
+   */
+  async createReEnrollmentRequest(accountId: string, dto: CreateReEnrollmentRequestDto) {
+    const student = await this.studentService.findByAccountId(accountId);
+    if (!student) {
+      throw new BadRequestException('Sinh viên không tồn tại');
+    }
+
+    const enrollment = await this.enrollmentService.findByIdWithStudentAndClass(dto.enrollmentId);
+    if (!enrollment) {
+      throw new BadRequestException({
+        message: 'Enrollment không tồn tại',
+        enrollmentId: dto.enrollmentId
+      });
+    }
+
+    if (enrollment.studentId !== student.studentId) {
+      throw new ConflictException({
+        message: 'Không thể tạo tái nhập học cho enrollment của học viên khác',
+        reason: 'ENROLLMENT_STUDENT_MISMATCH'
+      });
+    }
+
+    if (enrollment.status !== 'DEFERRED') {
+      throw new BadRequestException({
+        message: 'Enrollment phải ở trạng thái DEFERRED để tái nhập học',
+        enrollmentId: dto.enrollmentId,
+        status: enrollment.status
+      });
+    }
+
+    const pendingRequest = await this.requestRepo.findPendingReEnrollmentRequest(dto.enrollmentId);
+    if (pendingRequest) {
+      throw new ConflictException({
+        message: 'Enrollment này đã có yêu cầu tái nhập học đang chờ xử lý',
+        requestId: pendingRequest.requestId
+      });
+    }
+
+    return this.requestRepo.createReEnrollmentRequest({
+      senderAccountId: accountId,
+      enrollmentId: dto.enrollmentId,
+      fromClassId: enrollment.classId,
+      reason: dto.reason
+    });
+  }
+
+  /**
    * Tạo request đổi ngày/ca buổi học
    * Rule bắt buộc: lịch đề xuất không được trùng với bất kỳ buổi học nào khác.
    */
@@ -284,6 +335,26 @@ export class RequestService {
   }
 
   /**
+   * Lấy danh sách yêu cầu tái nhập học
+   */
+  async findAllReEnrollmentRequests(query: ReEnrollmentRequestSearchDto, user?: IAccountRequest) {
+    if (user) {
+      if (user.roleName === AppConfig.ROLE.TEACHER) {
+        throw new ForbiddenException('Giáo viên không có quyền truy cập yêu cầu tái nhập học');
+      }
+      if (user.roleName === AppConfig.ROLE.STUDENT) {
+        query.senderAccountId = user.accountId;
+      }
+    }
+
+    const [data, total] = await Promise.all([
+      this.requestRepo.findManyReEnrollmentRequests(query),
+      this.requestRepo.countReEnrollmentRequests(query)
+    ]);
+    return paginate(data, total, query);
+  }
+
+  /**
    * Lấy danh sách yêu cầu đổi ngày/ca học
    */
   async findAllScheduleChanges(query: ScheduleChangeSearchDto, user?: IAccountRequest) {
@@ -317,6 +388,15 @@ export class RequestService {
     const [data, total] = await Promise.all([
       this.requestRepo.findManyLeaveRequests(query),
       this.requestRepo.countLeaveRequests(query)
+    ]);
+    return paginate(data, total, query);
+  }
+
+  async findMyReEnrollmentRequests(accountId: string, query: ReEnrollmentRequestSearchDto) {
+    query.senderAccountId = accountId;
+    const [data, total] = await Promise.all([
+      this.requestRepo.findManyReEnrollmentRequests(query),
+      this.requestRepo.countReEnrollmentRequests(query)
     ]);
     return paginate(data, total, query);
   }
@@ -426,7 +506,7 @@ export class RequestService {
 
   /**
    * Xử lý yêu cầu bảo lưu (ADMIN) — bắt buộc cùng transaction.
-   * - Nếu `isSuccess = true`: update `Enrollment.status = DEFERRED` + set `Request.leaveStatus = ACTIVE` + approve request.
+   * - Nếu `isSuccess = true`: update `Enrollment.status = DEFERRED` + approve request.
    * - Nếu `isSuccess = false`: reject request.
    */
   async processLeaveRequest(requestId: string, approver: IAccountRequest, dto: ProcessLeaveRequestDto) {
@@ -434,6 +514,21 @@ export class RequestService {
       requestId,
       approverAccountId: approver.accountId,
       isSuccess: dto.isSuccess,
+      approvalNote: dto.approvalNote
+    });
+  }
+
+  /**
+   * Xử lý yêu cầu tái nhập học (ADMIN) — bắt buộc cùng transaction.
+   * - Nếu `isSuccess = true`: tạo enrollment mới ở lớp admin chọn và lưu toClassId vào request.
+   * - Nếu `isSuccess = false`: reject request.
+   */
+  async processReEnrollmentRequest(requestId: string, approver: IAccountRequest, dto: ProcessReEnrollmentRequestDto) {
+    return this.requestRepo.processReEnrollmentRequest({
+      requestId,
+      approverAccountId: approver.accountId,
+      isSuccess: dto.isSuccess,
+      toClassId: dto.toClassId,
       approvalNote: dto.approvalNote
     });
   }

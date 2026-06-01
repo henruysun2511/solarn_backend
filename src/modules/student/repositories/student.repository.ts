@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { EnrollmentStatus, Prisma } from '@prisma/client';
 import { PrismaService } from 'prisma/prisma.service';
 
 import { StudentClassSearchDto } from '../dtos/student-class-search.dto';
@@ -45,7 +45,14 @@ export class StudentRepository {
   private buildWhereByClass(classId: string, query: StudentClassSearchDto): Prisma.StudentWhereInput {
     const { search } = query;
     return {
-      enrollments: { some: { classId } },
+      enrollments: {
+        some: {
+          classId,
+          status: {
+            notIn: [EnrollmentStatus.DROPPED, EnrollmentStatus.DEFERRED]
+          }
+        }
+      },
       ...(search && { profile: { fullName: { contains: search, mode: 'insensitive' } } })
     };
   }

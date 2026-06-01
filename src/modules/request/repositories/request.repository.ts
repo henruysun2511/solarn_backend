@@ -1,10 +1,11 @@
 import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'prisma/prisma.service';
-import { EnrollmentStatus, LeaveStatus, Prisma, RequestStatus, RequestType } from '@prisma/client';
+import { EnrollmentStatus, Prisma, RequestStatus, RequestType } from '@prisma/client';
 
 import {
   SalaryComplaintSearchDto,
   TransferRequestSearchDto,
+  ReEnrollmentRequestSearchDto,
   LeaveRequestSearchDto,
   ScheduleChangeSearchDto
 } from '../dtos';
@@ -521,8 +522,7 @@ export class RequestRepository {
           status: true,
           enrollmentId: true,
           leaveStartDate: true,
-          leaveEndDate: true,
-          leaveStatus: true
+          leaveEndDate: true
         }
       });
 
@@ -557,7 +557,6 @@ export class RequestRepository {
             leaveStartDate: true,
             leaveEndDate: true,
             progressAtRequest: true,
-            leaveStatus: true,
             reason: true,
             createdAt: true,
             updatedAt: true
@@ -619,7 +618,6 @@ export class RequestRepository {
         where: { requestId: request.requestId },
         data: {
           status: RequestStatus.APPROVED,
-          leaveStatus: LeaveStatus.ACTIVE,
           approverAccountId: data.approverAccountId,
           approvalNote: data.approvalNote
         },
@@ -634,7 +632,6 @@ export class RequestRepository {
           leaveStartDate: true,
           leaveEndDate: true,
           progressAtRequest: true,
-          leaveStatus: true,
           reason: true,
           createdAt: true,
           updatedAt: true
@@ -644,6 +641,205 @@ export class RequestRepository {
       return {
         request: updatedRequest,
         enrollment: updatedEnrollment
+      };
+    });
+  }
+
+  async processReEnrollmentRequest(data: {
+    requestId: string;
+    approverAccountId: string;
+    isSuccess: boolean;
+    toClassId?: string;
+    approvalNote?: string;
+  }) {
+    return this.prisma.$transaction(async (tx) => {
+      const request = await tx.request.findUnique({
+        where: { requestId: data.requestId },
+        select: {
+          requestId: true,
+          type: true,
+          status: true,
+          senderAccountId: true,
+          enrollmentId: true,
+          fromClassId: true
+        }
+      });
+
+      if (!request) {
+        throw new BadRequestException('Yêu cầu không tồn tại');
+      }
+
+      if (request.type !== RequestType.RE_ENROLLMENT_REQUEST) {
+        throw new BadRequestException('Request không phải loại tái nhập học');
+      }
+
+      if (request.status !== RequestStatus.PENDING) {
+        throw new ConflictException('Yêu cầu đã được xử lý');
+      }
+
+      if (!data.isSuccess) {
+        const updatedRequest = await tx.request.update({
+          where: { requestId: request.requestId },
+          data: {
+            status: RequestStatus.REJECTED,
+            approverAccountId: data.approverAccountId,
+            approvalNote: data.approvalNote
+          },
+          select: {
+            requestId: true,
+            type: true,
+            status: true,
+            senderAccountId: true,
+            approverAccountId: true,
+            approvalNote: true,
+            enrollmentId: true,
+            fromClassId: true,
+            toClassId: true,
+            reason: true,
+            createdAt: true,
+            updatedAt: true
+          }
+        });
+
+        return {
+          request: updatedRequest,
+          oldEnrollment: null,
+          newEnrollment: null
+        };
+      }
+
+      if (!request.enrollmentId || !request.fromClassId) {
+        throw new BadRequestException('Request tái nhập học thiếu dữ liệu (enrollmentId/fromClassId)');
+      }
+
+      if (!data.toClassId) {
+        throw new BadRequestException('Thiếu toClassId để xếp lớp tái nhập học');
+      }
+
+      const oldEnrollment = await tx.enrollment.findUnique({
+        where: { enrollmentId: request.enrollmentId },
+        select: {
+          enrollmentId: true,
+          studentId: true,
+          classId: true,
+          status: true,
+          createdAt: true,
+          class: { select: { courseId: true } }
+        }
+      });
+
+      if (!oldEnrollment) {
+        throw new BadRequestException('Enrollment cũ không tồn tại');
+      }
+
+      if (oldEnrollment.status !== EnrollmentStatus.DEFERRED) {
+        throw new BadRequestException('Enrollment cũ phải ở trạng thái DEFERRED để tái nhập học');
+      }
+
+      if (oldEnrollment.classId !== request.fromClassId) {
+        throw new ConflictException('Lớp cũ trong request không khớp enrollment bảo lưu');
+      }
+
+      const targetClass = await tx.class.findUnique({
+        where: { classId: data.toClassId },
+        select: {
+          classId: true,
+          courseId: true,
+          startDate: true,
+          maxStudents: true
+        }
+      });
+
+      if (!targetClass) {
+        throw new BadRequestException('Lớp tái nhập học không tồn tại');
+      }
+
+      if (targetClass.courseId !== oldEnrollment.class.courseId) {
+        throw new BadRequestException('Lớp tái nhập học phải cùng khóa học với lớp đã bảo lưu');
+      }
+
+      const currentCount = await tx.enrollment.count({
+        where: {
+          classId: data.toClassId,
+          status: { notIn: [EnrollmentStatus.DROPPED, EnrollmentStatus.DEFERRED] }
+        }
+      });
+
+      if (currentCount >= targetClass.maxStudents) {
+        throw new BadRequestException('Lớp tái nhập học đã đủ học sinh');
+      }
+
+      const existingToEnrollment = await tx.enrollment.findUnique({
+        where: {
+          studentId_classId: {
+            studentId: oldEnrollment.studentId,
+            classId: data.toClassId
+          }
+        },
+        select: {
+          enrollmentId: true,
+          status: true
+        }
+      });
+
+      if (existingToEnrollment && existingToEnrollment.status !== EnrollmentStatus.DROPPED) {
+        throw new ConflictException('Học viên đã có enrollment ở lớp tái nhập học');
+      }
+
+      const nextStatus =
+        new Date() >= targetClass.startDate ? EnrollmentStatus.IN_PROGRESS : EnrollmentStatus.NOT_STARTED;
+
+      let newEnrollment;
+      try {
+        newEnrollment = await tx.enrollment.create({
+          data: {
+            student: { connect: { studentId: oldEnrollment.studentId } },
+            class: { connect: { classId: targetClass.classId } },
+            status: nextStatus
+          },
+          select: {
+            enrollmentId: true,
+            studentId: true,
+            classId: true,
+            status: true,
+            createdAt: true
+          }
+        });
+      } catch (err) {
+        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+          throw new ConflictException('Học viên đã có enrollment ở lớp tái nhập học');
+        }
+        throw err;
+      }
+
+      const updatedRequest = await tx.request.update({
+        where: { requestId: request.requestId },
+        data: {
+          status: RequestStatus.APPROVED,
+          approverAccountId: data.approverAccountId,
+          approvalNote: data.approvalNote,
+          toClassId: targetClass.classId
+        },
+        select: {
+          requestId: true,
+          type: true,
+          status: true,
+          senderAccountId: true,
+          approverAccountId: true,
+          approvalNote: true,
+          enrollmentId: true,
+          fromClassId: true,
+          toClassId: true,
+          reason: true,
+          createdAt: true,
+          updatedAt: true
+        }
+      });
+
+      return {
+        request: updatedRequest,
+        oldEnrollment,
+        newEnrollment
       };
     });
   }
@@ -721,6 +917,47 @@ export class RequestRepository {
         progressAtRequest: true,
         reason: true,
         createdAt: true
+      }
+    });
+  }
+
+  createReEnrollmentRequest(data: {
+    senderAccountId: string;
+    enrollmentId: string;
+    fromClassId: string;
+    reason?: string;
+  }) {
+    return this.prisma.request.create({
+      data: {
+        type: RequestType.RE_ENROLLMENT_REQUEST,
+        senderAccountId: data.senderAccountId,
+        enrollmentId: data.enrollmentId,
+        fromClassId: data.fromClassId,
+        reason: data.reason || '',
+        status: RequestStatus.PENDING
+      },
+      select: {
+        requestId: true,
+        type: true,
+        status: true,
+        enrollmentId: true,
+        fromClassId: true,
+        toClassId: true,
+        reason: true,
+        createdAt: true
+      }
+    });
+  }
+
+  findPendingReEnrollmentRequest(enrollmentId: string) {
+    return this.prisma.request.findFirst({
+      where: {
+        type: RequestType.RE_ENROLLMENT_REQUEST,
+        enrollmentId,
+        status: RequestStatus.PENDING
+      },
+      select: {
+        requestId: true
       }
     });
   }
@@ -963,6 +1200,145 @@ export class RequestRepository {
     });
   }
 
+  // ── RE_ENROLLMENT_REQUEST ─────────────────────────────────
+  private buildReEnrollmentRequestWhere(query: ReEnrollmentRequestSearchDto): Prisma.RequestWhereInput {
+    const { search, status, senderAccountId, enrollmentId, fromClassId, toClassId } = query;
+    const where: Prisma.RequestWhereInput = {
+      type: RequestType.RE_ENROLLMENT_REQUEST
+    };
+
+    if (status) {
+      where.status = status;
+    }
+    if (senderAccountId) {
+      where.senderAccountId = senderAccountId;
+    }
+    if (enrollmentId) {
+      where.enrollmentId = enrollmentId;
+    }
+    if (fromClassId) {
+      where.fromClassId = fromClassId;
+    }
+    if (toClassId) {
+      where.toClassId = toClassId;
+    }
+    if (search) {
+      where.OR = [
+        { reason: { contains: search, mode: 'insensitive' } },
+        {
+          senderAccount: {
+            profile: {
+              fullName: { contains: search, mode: 'insensitive' }
+            }
+          }
+        }
+      ];
+    }
+    return where;
+  }
+
+  async findManyReEnrollmentRequests(query: ReEnrollmentRequestSearchDto) {
+    const { skip, limit, sortBy, sortOrder } = query;
+    const where = this.buildReEnrollmentRequestWhere(query);
+    return this.prisma.request.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy: { [sortBy]: sortOrder },
+      select: {
+        requestId: true,
+        type: true,
+        status: true,
+        reason: true,
+        senderAccountId: true,
+        approverAccountId: true,
+        approvalNote: true,
+        createdAt: true,
+        updatedAt: true,
+        enrollmentId: true,
+        fromClassId: true,
+        toClassId: true,
+        senderAccount: {
+          select: {
+            accountId: true,
+            username: true,
+            profile: {
+              select: {
+                fullName: true,
+                email: true,
+                phone: true,
+                avatarUrl: true
+              }
+            }
+          }
+        },
+        approverAccount: {
+          select: {
+            accountId: true,
+            username: true,
+            profile: {
+              select: {
+                fullName: true,
+                email: true
+              }
+            }
+          }
+        },
+        enrollment: {
+          select: {
+            enrollmentId: true,
+            status: true,
+            class: {
+              select: {
+                classId: true,
+                classCode: true,
+                roomCode: true,
+                course: {
+                  select: {
+                    courseId: true,
+                    courseName: true
+                  }
+                }
+              }
+            }
+          }
+        },
+        fromClass: {
+          select: {
+            classId: true,
+            classCode: true,
+            roomCode: true,
+            course: {
+              select: {
+                courseId: true,
+                courseName: true
+              }
+            }
+          }
+        },
+        toClass: {
+          select: {
+            classId: true,
+            classCode: true,
+            roomCode: true,
+            course: {
+              select: {
+                courseId: true,
+                courseName: true
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  async countReEnrollmentRequests(query: ReEnrollmentRequestSearchDto): Promise<number> {
+    return this.prisma.request.count({
+      where: this.buildReEnrollmentRequestWhere(query)
+    });
+  }
+
   // ── LEAVE_REQUEST ─────────────────────────────────────────
   private buildLeaveRequestWhere(query: LeaveRequestSearchDto): Prisma.RequestWhereInput {
     const { search, status, senderAccountId, enrollmentId } = query;
@@ -1016,7 +1392,6 @@ export class RequestRepository {
         leaveStartDate: true,
         leaveEndDate: true,
         progressAtRequest: true,
-        leaveStatus: true,
         senderAccount: {
           select: {
             accountId: true,

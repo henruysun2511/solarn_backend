@@ -73,10 +73,11 @@ enum OtpPurpose {
 }
 
 enum RequestType {
-  SCHEDULE_CHANGE  @map("SCHEDULE_CHANGE")
-  SALARY_COMPLAINT @map("SALARY_COMPLAINT")
-  LEAVE_REQUEST    @map("LEAVE_REQUEST")
-  TRANSFER_REQUEST @map("TRANSFER_REQUEST")
+  SCHEDULE_CHANGE       @map("SCHEDULE_CHANGE")
+  SALARY_COMPLAINT      @map("SALARY_COMPLAINT")
+  LEAVE_REQUEST         @map("LEAVE_REQUEST")
+  TRANSFER_REQUEST      @map("TRANSFER_REQUEST")
+  RE_ENROLLMENT_REQUEST @map("RE_ENROLLMENT_REQUEST")
 }
 
 enum RequestStatus {
@@ -85,14 +86,6 @@ enum RequestStatus {
   REJECTED  @map("REJECTED")
   CANCELLED @map("CANCELLED")
   RESOLVED  @map("RESOLVED")
-}
-
-// Chỉ dùng cho LEAVE_REQUEST sau khi APPROVED
-enum LeaveStatus {
-  ACTIVE  @map("ACTIVE")
-  ON_HOLD @map("ON_HOLD")
-  EXPIRED @map("EXPIRED")
-  RESUMED @map("RESUMED")
 }
 
 model AuditLog {
@@ -121,14 +114,14 @@ model AuditLog {
 }
 
 model Setting {
-  settingId String   @id @default(uuid()) @map("setting_id")
-  siteName  String   @map("site_name") @db.VarChar(255)
-  logoUrl   String?  @map("logo_url") @db.Text
+  settingId String  @id @default(uuid()) @map("setting_id")
+  siteName  String  @map("site_name") @db.VarChar(255)
+  logoUrl   String? @map("logo_url") @db.Text
 
   // ── THÔNG TIN LIÊN HỆ & CHÂN TRANG ──────────────────────
-  hotline   String?  @db.VarChar(20)
-  email     String?  @db.VarChar(255)
-  address   String?  @db.Text
+  hotline String? @db.VarChar(20)
+  email   String? @db.VarChar(255)
+  address String? @db.Text
 
   // ── SEO CONFIGURATION ───────────────────────────────────
   metaTitle       String? @map("meta_title") @db.VarChar(255)
@@ -539,18 +532,18 @@ model Request {
 
   // ── LEAVE_REQUEST ─────────────────────────────────────────
   // Học viên xin bảo lưu khóa học
-  enrollmentId      String?      @map("enrollment_id")
-  leaveStartDate    DateTime?    @map("leave_start_date") @db.Date
-  leaveEndDate      DateTime?    @map("leave_end_date") @db.Date
-  progressAtRequest Float?       @map("progress_at_request") // % tiến độ lúc gửi đơn
-  leaveStatus       LeaveStatus? @map("leave_status") // điền sau khi APPROVED
+  enrollmentId      String?   @map("enrollment_id")
+  leaveStartDate    DateTime? @map("leave_start_date") @db.Date
+  leaveEndDate      DateTime? @map("leave_end_date") @db.Date
+  progressAtRequest Float?    @map("progress_at_request") // % tiến độ lúc gửi đơn
 
   // ── TRANSFER_REQUEST ──────────────────────────────────────
   // Học viên xin chuyển sang lớp khác
+  // RE_ENROLLMENT_REQUEST dùng fromClassId là lớp cũ bảo lưu, toClassId là lớp admin xếp học lại
   fromClassId String? @map("from_class_id")
   toClassId   String? @map("to_class_id")
 
-  // ── Relations ─────────────────────────────────────────────
+  // ── Relations ──────────────────────────────t───────────────
   senderAccount   Account          @relation("RequestSentBy", fields: [senderAccountId], references: [accountId], onDelete: Cascade)
   approverAccount Account?         @relation("RequestApprovedBy", fields: [approverAccountId], references: [accountId], onDelete: SetNull)
   session         ScheduleSession? @relation(fields: [sessionId], references: [sessionId], onDelete: SetNull)
