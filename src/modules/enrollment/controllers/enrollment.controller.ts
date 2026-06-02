@@ -1,7 +1,8 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { ResponseMessage } from 'common/decorators';
+import { ResponseMessage, User } from 'common/decorators';
 import { SortOrder } from 'common/enums';
+import { IAccountRequest } from 'common/interfaces';
 import { EnrollmentStatus } from '@prisma/client';
 import { SwaggerDoc } from 'common/swagger';
 
@@ -13,6 +14,17 @@ import { EnrollmentService } from '../services/enrollment.service';
 @Controller('enrollments')
 export class EnrollmentController {
   constructor(private readonly enrollmentService: EnrollmentService) {}
+
+  @SwaggerDoc({
+    summary: 'Lấy danh sách enrollment của tôi',
+    description: 'Returns enrollments for the current authenticated student.',
+    status: 200
+  })
+  @Get('my')
+  @ResponseMessage('Lấy danh sách enrollment thành công')
+  async findMyEnrollments(@User() user: IAccountRequest) {
+    return this.enrollmentService.findMyEnrollments(user);
+  }
 
   @SwaggerDoc({
     summary: 'Lấy danh sách enrollment',
