@@ -4,7 +4,7 @@ import { Public, ResponseMessage } from 'common/decorators';
 import { SortOrder } from 'common/enums';
 import { SwaggerDoc } from 'common/swagger';
 
-import { AccountSearchDto, CreateAccountDto, UpdateAccountStatusDto } from '../dtos';
+import { AccountSearchDto, CreateAccountDto, UpdateAccountRoleDto, UpdateAccountStatusDto } from '../dtos';
 import { AccountSortBy } from '../enums/account-sort-by.enum';
 import { AccountService } from '../services/account.service';
 
@@ -63,5 +63,15 @@ export class AccountController {
   @Patch(':accountId/status')
   async changeStatus(@Param('accountId') accountId: string, @Body() dto: UpdateAccountStatusDto) {
     return this.accountService.changeStatus(accountId, dto.status);
+  }
+
+  @SwaggerDoc({
+    summary: 'Update account role',
+    bodyType: UpdateAccountRoleDto,
+    status: 200
+  })
+  @Patch(':accountId/role')
+  async changeRole(@Param('accountId') accountId: string, @Body() dto: UpdateAccountRoleDto) {
+    return this.accountService.changeRole(accountId, dto.roleId);
   }
 }

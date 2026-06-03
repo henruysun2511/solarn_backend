@@ -64,7 +64,7 @@ export class AuthService {
       const passwordTrue = await comparePassword(password, account.password);
 
       if (!passwordTrue) throw new BadRequestException('Mật khẩu không đúng');
-      const roleName = await this.roleService.getNameByRoleId(account.roleId);
+      const roleName = (await this.roleService.getNameByRoleId(account.roleId))?.toUpperCase();
       return {
         accountId: account.accountId,
         username,
@@ -163,7 +163,7 @@ export class AuthService {
       if (!account) throw new NotFoundException('Tài khoản không tồn tại');
 
       // Tạo accessToken mới
-      const roleName = await this.roleService.getNameByRoleId(account.roleId);
+      const roleName = (await this.roleService.getNameByRoleId(account.roleId))?.toUpperCase();
       const payloadAccessToken = await this.buildAuthPayload(account.accountId, roleName!);
 
       const accessToken = this.jwtService.sign(payloadAccessToken);

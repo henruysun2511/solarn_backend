@@ -98,11 +98,12 @@ export class AccountRepository {
         throw new BadRequestException('Role not found');
       }
 
-      if (role.roleName !== AppConfig.ROLE.ADMIN && role.roleName !== AppConfig.ROLE.TEACHER) {
+      const upperRoleName = role.roleName.toUpperCase();
+      if (upperRoleName !== AppConfig.ROLE.ADMIN && upperRoleName !== AppConfig.ROLE.TEACHER) {
         throw new BadRequestException('Only ADMIN and TEACHER roles are allowed');
       }
 
-      const mustHaveProfile = role.roleName === AppConfig.ROLE.TEACHER;
+      const mustHaveProfile = upperRoleName === AppConfig.ROLE.TEACHER;
 
       if (mustHaveProfile && !input.profile?.fullName) {
         throw new BadRequestException('profile.fullName is required for TEACHER role');
@@ -118,7 +119,7 @@ export class AccountRepository {
         include: { profile: true }
       });
 
-      if (role.roleName === AppConfig.ROLE.TEACHER) {
+      if (upperRoleName === AppConfig.ROLE.TEACHER) {
         if (!account.profile?.profileId) {
           throw new BadRequestException('Profile is required for TEACHER role');
         }
@@ -144,6 +145,13 @@ export class AccountRepository {
     return this.prisma.account.update({
       where: { accountId },
       data: { status }
+    });
+  }
+
+  updateRole(accountId: string, roleId: string) {
+    return this.prisma.account.update({
+      where: { accountId },
+      data: { roleId }
     });
   }
 

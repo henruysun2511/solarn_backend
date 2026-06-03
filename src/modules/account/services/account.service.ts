@@ -90,6 +90,20 @@ export class AccountService {
     throw new BadRequestException('Trạng thái không hợp lệ');
   }
 
+  async changeRole(accountId: string, roleId: string) {
+    const account = await this.accountRepo.findById(accountId);
+    if (!account) {
+      throw new BadRequestException('Tài khoản không tồn tại');
+    }
+
+    const roleName = await this.roleService.getNameByRoleId(roleId);
+    if (!roleName) {
+      throw new BadRequestException('Vai trò không tồn tại');
+    }
+
+    return this.accountRepo.updateRole(accountId, roleId);
+  }
+
   private async activate(accountId: string) {
     return this.accountRepo.updateStatus(accountId, AccountStatus.ACTIVE);
   }
