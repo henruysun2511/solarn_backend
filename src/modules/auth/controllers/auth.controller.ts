@@ -6,7 +6,7 @@ import { SwaggerDoc } from 'common/swagger';
 import { Request, Response } from 'express';
 import { RegisterStudentDto } from 'modules/account/dtos';
 
-import { LoginDto, VerifyOtpDto } from '../dtos';
+import { ChangePasswordDto, LoginDto, VerifyOtpDto } from '../dtos';
 import { LocalAuthGuard } from '../guards';
 import { AuthService } from '../services/auth.service';
 import { OtpService } from '../services/otp.service';
@@ -56,6 +56,18 @@ export class AuthController {
   @ResponseMessage('Xác thực thành công')
   async verifyEmail(@Body() dto: VerifyOtpDto) {
     return this.otpService.verifyRegisterOtp(dto.email, dto.otp);
+  }
+
+  @SwaggerDoc({
+    summary: 'Change password',
+    bodyType: ChangePasswordDto,
+    status: 200
+  })
+  @ApiBearerAuth()
+  @Post('change-password')
+  @ResponseMessage('Đổi mật khẩu thành công')
+  async changePassword(@User() account: IAccountRequest, @Body() dto: ChangePasswordDto) {
+    return this.authService.changePassword(account.accountId, dto);
   }
 
   @SwaggerDoc({

@@ -24,6 +24,14 @@ export class AccountService {
     return this.accountRepo.findById(accountId);
   }
 
+  findByIdWithPassword(accountId: string) {
+    return this.accountRepo.findByIdWithPassword(accountId);
+  }
+
+  updatePassword(accountId: string, passwordHash: string) {
+    return this.accountRepo.updatePassword(accountId, passwordHash);
+  }
+
   async create(accountDto: CreateAccountDto) {
     if (accountDto.password !== accountDto.passwordConfirm) {
       throw new BadRequestException('Password confirmation does not match');

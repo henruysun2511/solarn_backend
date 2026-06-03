@@ -14,6 +14,20 @@ export class AccountRepository {
     return this.prisma.account.findUnique({ where: { accountId } });
   }
 
+  findByIdWithPassword(accountId: string) {
+    return this.prisma.account.findUnique({
+      where: { accountId },
+      select: { accountId: true, password: true }
+    });
+  }
+
+  updatePassword(accountId: string, passwordHash: string) {
+    return this.prisma.account.update({
+      where: { accountId },
+      data: { password: passwordHash }
+    });
+  }
+
   async findMany(query: AccountSearchDto) {
     const { page, limit, search, sortBy, sortOrder, roleId, username } = query;
     return this.prisma.account.findMany({

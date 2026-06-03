@@ -9,7 +9,7 @@ import { JwtService } from '@nestjs/jwt';
 import { AccountService } from 'modules/account/services/account.service';
 import { RegisterStudentDto } from 'modules/account/dtos';
 import { MailerService } from 'shared/mailer/mailer.service';
-import { comparePassword, hashToken } from 'common/utils';
+import { comparePassword, hashPassword, hashToken } from 'common/utils';
 import { IAccountRequest } from 'common/interfaces';
 import { RoleService } from 'modules/role/services/role.service';
 import { v4 as uuidv4 } from 'uuid';
@@ -18,6 +18,7 @@ import { env } from 'config';
 import { Response } from 'express';
 import { AppConfig } from 'common/constants';
 
+import { ChangePasswordDto } from '../dtos';
 import { AuthRepository } from '../repositories/auth.repository';
 
 import { OtpService } from './otp.service';
@@ -130,6 +131,27 @@ export class AuthService {
       roleName,
       jti: uuidv4()
     };
+  }
+
+  async changePassword(accountId: string, dto: ChangePasswordDto) {
+    if (dto.newPassword !== dto.newPasswordConfirm) {
+      throw new BadRequestException('Mật khẩu mới không khớp');
+    }
+
+    const account = await this.accountService.findByIdWithPassword(accountId);
+    if (!account) {
+      throw new NotFoundException('Tài khoản không tồn tại');
+    }
+
+    const isOldPasswordValid = await comparePassword(dto.oldPassword, account.password);
+    if (!isOldPasswordValid) {
+      throw new BadRequestException('Mật khẩu cũ không đúng');
+    }
+
+    const newPasswordHash = await hashPassword(dto.newPassword);
+    await this.accountService.updatePassword(accountId, newPasswordHash);
+
+    return { message: 'Đổi mật khẩu thành công' };
   }
 
   async logout(accountId: string, refreshToken: string, response: Response) {
