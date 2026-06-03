@@ -20,6 +20,7 @@ import { DashboardModule } from 'modules/dashboard/dashboard.module';
 import { EnrollmentModule } from 'modules/enrollment/enrollment.module';
 import { NotificationModule } from 'modules/notification/notification.module';
 import { SettingModule } from 'modules/setting/setting.module';
+import { BlogModule } from 'modules/blog/blog.module';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -55,7 +56,8 @@ import { PrismaModule } from './prisma/prisma.module';
     DashboardModule,
     EnrollmentModule,
     NotificationModule,
-    SettingModule
+    SettingModule,
+    BlogModule
   ],
 
   controllers: [AppController],
